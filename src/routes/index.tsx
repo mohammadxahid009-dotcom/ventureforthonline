@@ -293,7 +293,9 @@ function Index() {
       prevRef.current = next;
       setPlayer((current) => (!current || distanceMeters(current, next) >= 1 ? next : current));
 
-      if (nextAccuracy === null || nextAccuracy > REVEAL_MAX_ACCURACY) return;
+      // Always uncover the very first fix so the player can see themselves,
+      // even on a weak signal; later points still need a usable accuracy.
+      if (lastRevealRef.current && nextAccuracy !== null && nextAccuracy > REVEAL_MAX_ACCURACY) return;
       const lastReveal = lastRevealRef.current;
       if (lastReveal) {
         const revealGap = distanceMeters(lastReveal.point, next);
