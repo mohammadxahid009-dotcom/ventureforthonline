@@ -8,6 +8,13 @@
       "when": 1788940641949,
       "tag": "0000_create_game_progress",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788940666171,
+      "tag": "0001_create_photo_memories",
+      "breakpoints": true
     }
   ]
 }
