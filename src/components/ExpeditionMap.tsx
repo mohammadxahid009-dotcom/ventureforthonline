@@ -205,32 +205,45 @@ export default function ExpeditionMap({
     const cv = fogRef.current;
     if (!map || !cv) return;
     const size = map.getSize();
+    // Draw fog on a canvas larger than the screen so panning/zooming never
+    // drags an uncovered edge into view before the next redraw.
+    const padX = Math.round(size.x * 0.75);
+    const padY = Math.round(size.y * 0.75);
+    const w = size.x + padX * 2;
+    const h = size.y + padY * 2;
     const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-    if (cv.width !== Math.round(size.x * dpr) || cv.height !== Math.round(size.y * dpr)) {
-      cv.width = Math.round(size.x * dpr);
-      cv.height = Math.round(size.y * dpr);
-      cv.style.width = `${size.x}px`;
-      cv.style.height = `${size.y}px`;
+    if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) {
+      cv.width = Math.round(w * dpr);
+      cv.height = Math.round(h * dpr);
+      cv.style.width = `${w}px`;
+      cv.style.height = `${h}px`;
     }
     const ctx = cv.getContext("2d");
     if (!ctx) return;
 
     // anchor for the cheap pan/zoom transform
-    drawn.current = { tl: map.containerPointToLatLng(L.point(0, 0)), zoom: map.getZoom() };
+    drawn.current = {
+      tl: map.containerPointToLatLng(L.point(-padX, -padY)),
+      zoom: map.getZoom(),
+    };
     cv.style.transformOrigin = "0 0";
-    cv.style.transform = "translate3d(0,0,0)";
+    cv.style.transform = `translate3d(${-padX}px, ${-padY}px, 0)`;
 
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, size.x, size.y);
+    // canvas pixel space is offset by the padding from container coords
+    ctx.setTransform(dpr, 0, 0, dpr, padX * dpr, padY * dpr);
+    ctx.clearRect(-padX, -padY, w, h);
     ctx.fillStyle = "rgba(8, 12, 20, 0.965)";
-    ctx.fillRect(0, 0, size.x, size.y);
+    ctx.fillRect(-padX, -padY, w, h);
 
     const r = metresToPixels(map, REVEAL_RADIUS);
     const margin = r * 2;
     const projected = trail.map((geo) => ({ geo, point: map.latLngToContainerPoint(L.latLng(geo.lat, geo.lng)) }));
-    // keep only segments that can touch the viewport
+    // keep only segments that can touch the padded canvas area
     const visible = (p: L.Point) =>
-      p.x > -margin && p.y > -margin && p.x < size.x + margin && p.y < size.y + margin;
+      p.x > -padX - margin &&
+      p.y > -padY - margin &&
+      p.x < size.x + padX + margin &&
+      p.y < size.y + padY + margin;
     const nearView = projected.filter(({ point }, i) => {
       const before = projected[i - 1]?.point;
       const after = projected[i + 1]?.point;
@@ -241,6 +254,7 @@ export default function ExpeditionMap({
       return !previous || point.distanceTo(previous) >= Math.max(4, r * 0.18) || i === nearView.length - 1;
     });
     if (!pts.length) return;
+
 
     ctx.globalCompositeOperation = "destination-out";
     const stampRadius = Math.max(2, Math.round(r * 1.15));
