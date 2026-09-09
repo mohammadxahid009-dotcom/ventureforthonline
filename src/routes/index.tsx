@@ -67,7 +67,7 @@ type Phase = "start" | "locating" | "active";
 const TRAIL_STEP = 45; // metres between recorded discovery points
 const SAVE_DEBOUNCE = 8000; // ms — batch frequent trail growth into one write
 /** Fixes coarser than this never reveal fog or enter the trail. */
-const REVEAL_MAX_ACCURACY = 60;
+const REVEAL_MAX_ACCURACY = 500;
 /** Faster than this (m/s) = GPS glitch, not a human moving. */
 const MAX_HUMAN_SPEED = 12;
 /** Gap between trail points beyond which fog must not draw a streak. */
