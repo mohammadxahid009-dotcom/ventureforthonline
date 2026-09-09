@@ -15,6 +15,13 @@
       "when": 1788940666171,
       "tag": "0001_create_photo_memories",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788940696365,
+      "tag": "0002_photo_memories_storage_policies",
+      "breakpoints": true
     }
   ]
 }
