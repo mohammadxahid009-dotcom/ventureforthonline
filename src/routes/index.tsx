@@ -74,6 +74,58 @@ const MAX_HUMAN_SPEED = 12;
 /** Gap between trail points beyond which fog must not draw a streak. */
 export const MAX_TRAIL_GAP = 500;
 
+/** Glide the on-screen position between GPS fixes so the X/Z console counts
+ *  up continuously instead of jumping. Gameplay logic still uses raw fixes. */
+function useSmoothPosition(target: LatLng | null) {
+  const [pos, setPos] = useState<LatLng | null>(target);
+  const curRef = useRef<LatLng | null>(target);
+  const targetRef = useRef<LatLng | null>(target);
+  targetRef.current = target;
+  const active = target !== null;
+
+  useEffect(() => {
+    if (!active) {
+      curRef.current = null;
+      setPos(null);
+      return;
+    }
+    if (!curRef.current && targetRef.current) {
+      curRef.current = targetRef.current;
+      setPos(targetRef.current);
+    }
+    let raf = 0;
+    let last = performance.now();
+    let lastPush = 0;
+    const tick = (now: number) => {
+      raf = requestAnimationFrame(tick);
+      const t = targetRef.current;
+      const c = curRef.current;
+      if (!t || !c) return;
+      const dt = Math.min(0.1, (now - last) / 1000);
+      last = now;
+      const gap = distanceMeters(c, t);
+      if (gap > 40) {
+        // genuine jump (signal recovered elsewhere): snap, don't streak
+        curRef.current = t;
+        setPos(t);
+        return;
+      }
+      // deadband: hold still against sub-foot GPS jitter
+      if (gap < 0.15) return;
+      const k = 1 - Math.exp(-dt / 0.45); // converge in roughly half a second
+      curRef.current = { lat: c.lat + (t.lat - c.lat) * k, lng: c.lng + (t.lng - c.lng) * k };
+      if (now - lastPush >= 50) {
+        lastPush = now;
+        setPos(curRef.current);
+      }
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [active]);
+
+  return pos;
+}
+
 /** Drop lone GPS glitches, but never discard genuinely explored ground. */
 function cleanTrail(trail: LatLng[]) {
   if (trail.length < 8) return trail;
