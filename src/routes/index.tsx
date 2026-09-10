@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+// smoothing hook lives below
 import { useQueryClient } from "@tanstack/react-query";
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import type L from "leaflet";
@@ -402,6 +403,9 @@ function Index() {
     setToolOpen(false);
     setPhase("start");
   }, [stopTracking]);
+
+  // raw fixes drive fog/arrival; the smoothed position drives display
+  const smoothPlayer = useSmoothPosition(player);
 
   const dist = player && destination ? distanceMeters(player, destination) : Infinity;
   const arrived = dist <= ARRIVAL_RADIUS;
