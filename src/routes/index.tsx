@@ -456,7 +456,7 @@ function Index() {
     <main className="relative h-[100dvh] w-full overflow-hidden bg-background text-foreground">
       <Suspense fallback={<div className="absolute inset-0 bg-background" />}>
         <ExpeditionMap
-          player={player}
+          player={me}
           heading={heading}
           destination={destination}
           destinationVisible={destVisible}
