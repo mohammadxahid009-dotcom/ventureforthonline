@@ -1,5 +1,4 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-// smoothing hook lives below
 import { useQueryClient } from "@tanstack/react-query";
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import type L from "leaflet";
