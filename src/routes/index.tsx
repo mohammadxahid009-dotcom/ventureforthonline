@@ -448,7 +448,8 @@ function Index() {
 
   const bearing = bearingDegrees(player, destination);
   const destVisible = isDiscovered(destination, trail);
-  const pc = gameCoords(player);
+  const me = smoothPlayer ?? player;
+  const pc = gameCoords(me);
   const dc = gameCoords(destination);
 
   return (
