@@ -27,6 +27,7 @@ import {
   pickDestinationInCone,
   rollDestination,
   sectorCode,
+  setCoordOrigin,
   walkMinutes,
   type Cone,
   type LatLng,

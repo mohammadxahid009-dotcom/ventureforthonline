@@ -52,16 +52,36 @@ export function rollDestination(origin: LatLng): LatLng {
   return destinationFrom(origin, bearing, meters);
 }
 
+let coordOrigin: LatLng | null = null;
+
+/** Lock the grid origin to the player's starting position for this session.
+ *  Once set, X depends only on longitude and Z only on latitude, so walking
+ *  along one axis changes exactly that coordinate. */
+export function setCoordOrigin(p: LatLng) {
+  coordOrigin = p;
+}
+
 /** Fictional Minecraft-style exploration grid derived from real coordinates. */
 export function gameCoords(p: LatLng) {
-  // 1 grid unit = 1 metre, measured from a fixed local anchor (the
-  // 0.5° grid cell you're in). No wrapping and no huge numbers: two
-  // nearby places always get small, nearby numbers, so the difference
-  // between your X/Z and the target's X/Z is a real distance in metres.
+  // Scale up so the numbers feel responsive as you walk.
+  const scale = 5; // 5 grid units ≈ 1 metre
+
+  if (coordOrigin) {
+    // Fixed origin means pure axis behaviour: north/south = Z, east/west = X.
+    // Longitude metres are computed at the origin latitude so lat movement
+    // does not leak into X.
+    const x = Math.round(
+      (p.lng - coordOrigin.lng) * 111320 * Math.cos(toRad(coordOrigin.lat)) * scale,
+    );
+    const z = Math.round(-(p.lat - coordOrigin.lat) * 110540 * scale);
+    return { x, z };
+  }
+
+  // Fallback before the origin is set: local 0.5° cell anchor.
   const anchorLat = Math.floor(p.lat * 2) / 2;
   const anchorLng = Math.floor(p.lng * 2) / 2;
-  const x = Math.round((p.lng - anchorLng) * 111320 * Math.cos(toRad(p.lat)));
-  const z = Math.round(-(p.lat - anchorLat) * 110540);
+  const x = Math.round((p.lng - anchorLng) * 111320 * Math.cos(toRad(p.lat)) * scale);
+  const z = Math.round(-(p.lat - anchorLat) * 110540 * scale);
   return { x, z };
 }
 
