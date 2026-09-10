@@ -312,6 +312,7 @@ function Index() {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const here = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setCoordOrigin(here);
         onFix(pos);
         // resume the saved expedition instead of rolling a new one
         const dest = savedDestination ?? rollDestination(here);
