@@ -667,7 +667,7 @@ function Index() {
               <p className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground">
                 Where you are
               </p>
-              <p className="text-[11px] tracking-[0.2em] text-accent">SECTOR {sectorCode(player)}</p>
+              <p className="text-[11px] tracking-[0.2em] text-accent">SECTOR {sectorCode(me)}</p>
             </div>
 
             <div className="mt-3 grid grid-cols-2 gap-3">
