@@ -52,36 +52,74 @@ export function rollDestination(origin: LatLng): LatLng {
   return destinationFrom(origin, bearing, meters);
 }
 
-let coordOrigin: LatLng | null = null;
+const SECTOR_DEGREES = 0.04;
+const COORDS_PER_METRE = 5;
+const LAT_METRES_PER_DEGREE = 110540;
+const LNG_METRES_PER_DEGREE = 111320;
+const LAT_SECTOR_COUNT = Math.ceil(180 / SECTOR_DEGREES);
+const LNG_SECTOR_COUNT = Math.ceil(360 / SECTOR_DEGREES);
 
-/** Lock the grid origin to the player's starting position for this session.
- *  Once set, X depends only on longitude and Z only on latitude, so walking
- *  along one axis changes exactly that coordinate. */
-export function setCoordOrigin(p: LatLng) {
-  coordOrigin = p;
+export type GlobalAddress = {
+  sector: string;
+  x: number;
+  z: number;
+};
+
+function sectorIndex(value: number, minimum: number, count: number) {
+  return Math.min(count - 1, Math.max(0, Math.floor((value - minimum) / SECTOR_DEGREES)));
 }
 
-/** Fictional Minecraft-style exploration grid derived from real coordinates. */
+function encodeSector(row: number, column: number) {
+  return `${column.toString(36).toUpperCase().padStart(3, "0")}-${row
+    .toString(36)
+    .toUpperCase()
+    .padStart(3, "0")}`;
+}
+
+function decodeSector(sector: string) {
+  const match = /^([0-9A-Z]{3})-([0-9A-Z]{3})$/i.exec(sector.trim());
+  if (!match?.[1] || !match[2]) return null;
+  const column = Number.parseInt(match[1], 36);
+  const row = Number.parseInt(match[2], 36);
+  if (column >= LNG_SECTOR_COUNT || row >= LAT_SECTOR_COUNT) return null;
+  return { row, column };
+}
+
+/** A permanent world address. The sector plus X/Z identifies one GPS point
+ * for every player; it never depends on where a session began. */
+export function globalAddress(p: LatLng): GlobalAddress {
+  const row = sectorIndex(p.lat, -90, LAT_SECTOR_COUNT);
+  const column = sectorIndex(p.lng, -180, LNG_SECTOR_COUNT);
+  const centreLat = -90 + (row + 0.5) * SECTOR_DEGREES;
+  const centreLng = -180 + (column + 0.5) * SECTOR_DEGREES;
+  const x = Math.round(
+    (p.lng - centreLng) * LNG_METRES_PER_DEGREE * Math.cos(toRad(centreLat)) * COORDS_PER_METRE,
+  );
+  const z = Math.round(-(p.lat - centreLat) * LAT_METRES_PER_DEGREE * COORDS_PER_METRE);
+  return { sector: encodeSector(row, column), x, z };
+}
+
+/** Resolve a shared sector/X/Z address back to its real-world point. */
+export function addressToLatLng(address: GlobalAddress): LatLng | null {
+  if (!Number.isFinite(address.x) || !Number.isFinite(address.z)) return null;
+  const indices = decodeSector(address.sector);
+  if (!indices) return null;
+  const centreLat = -90 + (indices.row + 0.5) * SECTOR_DEGREES;
+  const centreLng = -180 + (indices.column + 0.5) * SECTOR_DEGREES;
+  const lngScale = LNG_METRES_PER_DEGREE * Math.cos(toRad(centreLat)) * COORDS_PER_METRE;
+  if (Math.abs(lngScale) < 0.000001) return null;
+  const point = {
+    lat: centreLat - address.z / (LAT_METRES_PER_DEGREE * COORDS_PER_METRE),
+    lng: centreLng + address.x / lngScale,
+  };
+  if (point.lat < -90 || point.lat > 90 || point.lng < -180 || point.lng > 180) return null;
+  const canonical = globalAddress(point);
+  return canonical.sector === encodeSector(indices.row, indices.column) ? point : null;
+}
+
+/** Backwards-compatible coordinate helper for the HUD. */
 export function gameCoords(p: LatLng) {
-  // Scale up so the numbers feel responsive as you walk.
-  const scale = 5; // 5 grid units ≈ 1 metre
-
-  if (coordOrigin) {
-    // Fixed origin means pure axis behaviour: north/south = Z, east/west = X.
-    // Longitude metres are computed at the origin latitude so lat movement
-    // does not leak into X.
-    const x = Math.round(
-      (p.lng - coordOrigin.lng) * 111320 * Math.cos(toRad(coordOrigin.lat)) * scale,
-    );
-    const z = Math.round(-(p.lat - coordOrigin.lat) * 110540 * scale);
-    return { x, z };
-  }
-
-  // Fallback before the origin is set: local 0.5° cell anchor.
-  const anchorLat = Math.floor(p.lat * 2) / 2;
-  const anchorLng = Math.floor(p.lng * 2) / 2;
-  const x = Math.round((p.lng - anchorLng) * 111320 * Math.cos(toRad(p.lat)) * scale);
-  const z = Math.round(-(p.lat - anchorLat) * 110540 * scale);
+  const { x, z } = globalAddress(p);
   return { x, z };
 }
 
@@ -93,11 +131,7 @@ export const ARRIVAL_RADIUS = 40;
 
 /** Human-readable sector code for the fictional grid, e.g. "K-14". */
 export function sectorCode(p: LatLng) {
-  const { x, z } = gameCoords(p);
-  const letters = "ABCDEFGHJKLMNPQRSTUVWXYZ";
-  const l = letters[Math.abs(Math.floor(x / 512)) % letters.length] ?? "A";
-  const n = Math.abs(Math.floor(z / 512)) % 100;
-  return `${l}-${String(n).padStart(2, "0")}`;
+  return globalAddress(p).sector;
 }
 
 /** Rough walking time in minutes at ~4.8 km/h. */

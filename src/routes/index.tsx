@@ -22,12 +22,10 @@ import {
   compassLabel,
   distanceMeters,
   formatDistance,
-  gameCoords,
+  globalAddress,
   isDiscovered,
   pickDestinationInCone,
   rollDestination,
-  sectorCode,
-  setCoordOrigin,
   walkMinutes,
   type Cone,
   type LatLng,
@@ -364,7 +362,6 @@ function Index() {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const here = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        setCoordOrigin(here);
         onFix(pos);
         // resume the saved expedition instead of rolling a new one
         const dest = savedDestination ?? rollDestination(here);
@@ -449,8 +446,8 @@ function Index() {
   const bearing = bearingDegrees(player, destination);
   const destVisible = isDiscovered(destination, trail);
   const me = smoothPlayer ?? player;
-  const pc = gameCoords(me);
-  const dc = gameCoords(destination);
+  const pc = globalAddress(me);
+  const dc = globalAddress(destination);
 
   return (
     <main className="relative h-[100dvh] w-full overflow-hidden bg-background text-foreground">
@@ -667,7 +664,7 @@ function Index() {
               <p className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground">
                 Where you are
               </p>
-              <p className="text-[11px] tracking-[0.2em] text-accent">SECTOR {sectorCode(me)}</p>
+              <p className="text-[11px] tracking-[0.2em] text-accent">SECTOR {pc.sector}</p>
             </div>
 
             <div className="mt-3 grid grid-cols-2 gap-3">
@@ -684,6 +681,9 @@ function Index() {
                 </p>
                 <p className="coord-num mt-1 text-sm text-accent">
                   {`X ${group(dc.x)} · Z ${group(dc.z)}`}
+                </p>
+                <p className="mt-1 text-[9px] tracking-[0.18em] text-muted-foreground">
+                  SECTOR {dc.sector}
                 </p>
 
               </div>
