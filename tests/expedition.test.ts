@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { addressToLatLng, destinationFrom, globalAddress } from "./expedition";
+import { addressToLatLng, destinationFrom, globalAddress } from "../src/lib/expedition";
 
 const HOME = { lat: 28.6139, lng: 77.209 };
 
@@ -32,8 +32,7 @@ describe("global expedition addresses", () => {
   });
 
   test("nearby players do not receive personal zero points", () => {
-    const otherPlayer = destinationFrom(HOME, 45, 1000);
-    expect(globalAddress(otherPlayer)).not.toEqual(globalAddress(HOME));
+    expect(globalAddress(destinationFrom(HOME, 45, 1000))).not.toEqual(globalAddress(HOME));
   });
 
   test("crossing a boundary changes the sector", () => {
@@ -44,7 +43,6 @@ describe("global expedition addresses", () => {
 
   test("malformed and out-of-sector addresses are rejected", () => {
     expect(addressToLatLng({ sector: "INVALID", x: 0, z: 0 })).toBeNull();
-    const valid = globalAddress(HOME);
-    expect(addressToLatLng({ ...valid, x: 999999 })).toBeNull();
+    expect(addressToLatLng({ ...globalAddress(HOME), x: 999999 })).toBeNull();
   });
 });
