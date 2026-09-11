@@ -26,7 +26,6 @@ import {
   isDiscovered,
   pickDestinationInCone,
   rollDestination,
-  sectorCode,
   walkMinutes,
   type Cone,
   type LatLng,
