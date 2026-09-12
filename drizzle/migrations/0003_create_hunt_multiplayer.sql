@@ -105,6 +105,7 @@ create policy "players can read only their target"
 -- All room state changes go through the RPCs below, keeping capacity and host
 -- checks on the database rather than in the browser.
 revoke all on public.hunt_rooms, public.hunt_players, public.hunt_targets from authenticated;
+grant select on public.hunt_rooms, public.hunt_players, public.hunt_targets to authenticated;
 
 create or replace function public.create_hunt_room(p_mode text, p_display_name text)
 returns public.hunt_rooms
