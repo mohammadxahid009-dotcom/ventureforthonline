@@ -272,7 +272,7 @@ returns void
 language plpgsql
 security definer
 set search_path = public
-as $
+as $complete_hunt$
 declare
   v_mode text;
   v_updated integer;
@@ -299,7 +299,7 @@ begin
   set status = 'completed', completed_at = coalesce(completed_at, now())
   where room_id = p_room_id and user_id = auth.uid();
 end;
-$;
+$complete_hunt$;
 
 grant execute on function public.create_hunt_room(text, text) to authenticated;
 grant execute on function public.join_hunt_room(text, text) to authenticated;
