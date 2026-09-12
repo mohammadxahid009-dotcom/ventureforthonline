@@ -237,7 +237,7 @@ begin
 
     update public.hunt_rooms
     set host_user_id = coalesce(v_new_host, host_user_id),
-        state = case when v_new_host is null and state = 'waiting' then 'cancelled' else state end
+        state = case when v_new_host is null then 'cancelled' else state end
     where id = p_room_id;
   end if;
 end;
