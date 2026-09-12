@@ -35,6 +35,9 @@ import { useSession } from "@/lib/use-session";
 import { loadProgress, saveProgress, type Progress } from "@/lib/progress";
 import { addPhoto, deletePhoto, listPhotos, updatePhoto, type PhotoMemory } from "@/lib/photos";
 import { supabase } from "@/integrations/supabase/client";
+import MultiplayerLobby from "@/components/MultiplayerLobby";
+import { useHuntRealtime } from "@/hooks/use-hunt-realtime";
+import { assignHuntTarget, completeHuntTarget, leaveHunt, loadMyHuntTarget, type HuntRoom } from "@/lib/multiplayer";
 
 const ExpeditionMap = lazy(() => import("@/components/ExpeditionMap"));
 const DirectionTool = lazy(() => import("@/components/DirectionTool"));
@@ -139,6 +142,8 @@ function Index() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useSession();
   const [phase, setPhase] = useState<Phase>("start");
+  const [multiplayerOpen, setMultiplayerOpen] = useState(false);
+  const [multiplayerRoom, setMultiplayerRoom] = useState<HuntRoom | null>(null);
   const [player, setPlayer] = useState<LatLng | null>(null);
   const [accuracy, setAccuracy] = useState<number | null>(null);
   const [fixAge, setFixAge] = useState(0);
@@ -175,6 +180,10 @@ function Index() {
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const userIdRef = useRef<string | null>(null);
   userIdRef.current = user?.id ?? null;
+  const { room: liveHuntRoom, players: huntPlayers, remotePlayers } = useHuntRealtime(multiplayerRoom, user?.id, player);
+  const huntRoom = liveHuntRoom ?? multiplayerRoom;
+  const inMultiplayer = huntRoom !== null;
+  const huntWinner = huntPlayers.find((candidate) => candidate.user_id === huntRoom?.winner_user_id) ?? null;
 
   // ── signed-out visitors go to the account screen ─────────────
   useEffect(() => {
@@ -312,7 +321,7 @@ function Index() {
     });
   }, []);
 
-  const begin = useCallback(() => {
+  const begin = useCallback((room?: HuntRoom) => {
     if (!("geolocation" in navigator)) {
       setError("This device has no GPS support.");
       return;
@@ -360,13 +369,22 @@ function Index() {
     };
 
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
+      async (pos) => {
         const here = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         onFix(pos);
-        // resume the saved expedition instead of rolling a new one
-        const dest = savedDestination ?? rollDestination(here);
+        // Solo expeditions retain their saved destination. Multiplayer targets stay private per player but use the same Lat/Lng and global X/Z model.
+        const existingTarget = room && userIdRef.current
+          ? await loadMyHuntTarget(room.id, userIdRef.current).catch(() => null)
+          : null;
+        const dest = existingTarget ?? (room ? rollDestination(here) : savedDestination ?? rollDestination(here));
         setDestination(dest);
-        persist({ destination: dest, expeditionActive: true }, true);
+        if (room) {
+          void assignHuntTarget(room.id, dest).catch((cause: unknown) => {
+            setError(cause instanceof Error ? cause.message : "Could not assign your hunt target.");
+          });
+        } else {
+          persist({ destination: dest, expeditionActive: true }, true);
+        }
         setCelebrating(false);
         setPhase("active");
         watchRef.current = navigator.geolocation.watchPosition(onFix, () => {}, {
@@ -389,6 +407,8 @@ function Index() {
 
   const end = useCallback(() => {
     stopTracking();
+    if (multiplayerRoom) void leaveHunt(multiplayerRoom.id);
+    setMultiplayerRoom(null);
     prevRef.current = null;
     lastRevealRef.current = null;
     setDestination(null);
@@ -398,7 +418,7 @@ function Index() {
     setCelebrating(false);
     setToolOpen(false);
     setPhase("start");
-  }, [stopTracking]);
+  }, [stopTracking, multiplayerRoom]);
 
   // raw fixes drive fog/arrival; the smoothed position drives display
   const smoothPlayer = useSmoothPosition(player);
@@ -406,9 +426,16 @@ function Index() {
   const dist = player && destination ? distanceMeters(player, destination) : Infinity;
   const arrived = dist <= ARRIVAL_RADIUS;
 
-  // level up strictly on physical arrival
+  // Solo keeps its existing level progression. Multiplayer completion is stored against the room instead.
   useEffect(() => {
     if (phase !== "active" || !arrived || celebrating) return;
+    if (huntRoom) {
+      setCelebrating(true);
+      void completeHuntTarget(huntRoom.id).catch((cause: unknown) => {
+        setError(cause instanceof Error ? cause.message : "Could not record the completed target.");
+      });
+      return;
+    }
     setCelebrating(true);
     setLevel((l) => {
       const next = l + 1;
@@ -418,11 +445,15 @@ function Index() {
       });
       return next;
     });
-  }, [arrived, phase, celebrating, persist]);
+  }, [arrived, phase, celebrating, persist, huntRoom]);
+
+  useEffect(() => {
+    if (huntRoom?.mode === "vs" && huntRoom.state === "finished") setCelebrating(true);
+  }, [huntRoom?.id, huntRoom?.mode, huntRoom?.state]);
 
   const rollNext = useCallback(
     async (withCone?: Cone) => {
-      if (!player) return;
+      if (!player || inMultiplayer) return;
       setScouting(true);
       try {
         const next = withCone
@@ -436,11 +467,21 @@ function Index() {
         setScouting(false);
       }
     },
-    [player],
+    [player, inMultiplayer],
   );
 
+  const handleHuntStarted = useCallback((room: HuntRoom) => {
+    setMultiplayerOpen(false);
+    setMultiplayerRoom(room);
+    begin(room);
+  }, [begin]);
+
+  if (multiplayerOpen && user) {
+    return <MultiplayerLobby user={user} onClose={() => setMultiplayerOpen(false)} onHuntStarted={handleHuntStarted} />;
+  }
+
   if (phase !== "active" || !player || !destination) {
-    return <StartScreen onBegin={begin} loading={phase === "locating"} error={error} level={level} />;
+    return <StartScreen onBegin={begin} onMultiplayer={() => setMultiplayerOpen(true)} loading={phase === "locating"} error={error} level={level} />;
   }
 
   const bearing = bearingDegrees(player, destination);
@@ -458,6 +499,7 @@ function Index() {
           destination={destination}
           destinationVisible={destVisible}
           trail={trail}
+          otherPlayers={remotePlayers.map((peer) => ({ id: peer.user_id, name: peer.display_name, location: peer.location, connected: peer.connected }))}
           arrived={celebrating}
           follow={follow && !toolOpen}
           onUserPan={() => setFollow(false)}
@@ -721,11 +763,13 @@ function Coord({ axis, value }: { axis: string; value: number }) {
 
 function StartScreen({
   onBegin,
+  onMultiplayer,
   loading,
   error,
   level,
 }: {
   onBegin: () => void;
+  onMultiplayer: () => void;
   loading: boolean;
   error: string | null;
   level: number;
@@ -781,6 +825,9 @@ function StartScreen({
           >
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             {loading ? "FINDING YOU…" : "GIVE ME A PLACE"}
+          </button>
+          <button onClick={onMultiplayer} disabled={loading} className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-accent/35 px-4 py-3 text-[10px] font-bold tracking-[0.22em] text-accent transition-colors hover:bg-accent/10 disabled:opacity-60">
+            <Users className="h-4 w-4" /> MULTIPLAYER HUNT
           </button>
         </div>
 
