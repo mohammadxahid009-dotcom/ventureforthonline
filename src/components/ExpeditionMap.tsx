@@ -15,6 +15,8 @@ type Props = {
   follow: boolean;
   onUserPan: () => void;
   onMapReady: (map: L.Map) => void;
+  /** Other room members, carried by Realtime rather than the fog/trail system. */
+  otherPlayers?: Array<{ id: string; name: string; location: LatLng | null; connected: boolean }>;
   /** two-finger twist angle in degrees, reported back so overlays can match */
   onRotate?: (deg: number) => void;
 };
@@ -41,6 +43,29 @@ function playerIcon() {
           border:3px solid oklch(0.8 0.15 78);
           box-shadow:0 0 0 5px oklch(0.8 0.15 78 / .16),0 0 18px oklch(0.8 0.15 78 / .55);"></div>
       </div>`,
+  });
+}
+
+function escapeHtml(value: string) {
+  const escapes: Record<string, string> = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  };
+  return value.replace(/[&<>"']/g, (char) => escapes[char] ?? char);
+}
+
+function remotePlayerIcon(name: string) {
+  return L.divIcon({
+    className: "hunt-remote-marker",
+    iconSize: [42, 52],
+    iconAnchor: [21, 26],
+    html: `<div style="display:grid;justify-items:center;gap:3px;filter:drop-shadow(0 2px 5px rgba(0,0,0,.45));">
+      <div style="width:18px;height:18px;border-radius:50%;background:oklch(0.7 0.17 215);border:3px solid oklch(0.96 0.02 90);box-shadow:0 0 0 5px oklch(0.7 0.17 215 / .2),0 0 13px oklch(0.7 0.17 215 / .65);"></div>
+      <span style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border:1px solid oklch(0.7 0.17 215 / .42);border-radius:999px;background:oklch(0.16 0.02 235 / .94);padding:2px 6px;color:oklch(0.92 0.03 215);font:600 9px system-ui;letter-spacing:.08em;">${escapeHtml(name)}</span>
+    </div>`,
   });
 }
 
@@ -79,6 +104,7 @@ export default function ExpeditionMap({
   follow,
   onUserPan,
   onMapReady,
+  otherPlayers = [],
   onRotate,
 }: Props) {
   const shellRef = useRef<HTMLDivElement>(null);
@@ -91,6 +117,7 @@ export default function ExpeditionMap({
   const destRef = useRef<L.Marker | null>(null);
   const ringRef = useRef<L.Circle | null>(null);
   const lineRef = useRef<L.Polyline | null>(null);
+  const remoteRefs = useRef(new Map<string, L.Marker>());
 
   const programmatic = useRef(false);
   const drawn = useRef<{ tl: L.LatLng; zoom: number } | null>(null);
@@ -181,6 +208,39 @@ export default function ExpeditionMap({
       programmatic.current = false;
     }
   }, [player, destination, destinationVisible, follow, ready]);
+
+
+  // Other players are a separate Leaflet overlay. The fog canvas continues to
+  // use only this player's trail, so remote movement cannot reveal terrain.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const currentIds = new Set(otherPlayers.map((peer) => peer.id));
+
+    otherPlayers.forEach((peer) => {
+      if (!peer.location) return;
+      const point = L.latLng(peer.location.lat, peer.location.lng);
+      let marker = remoteRefs.current.get(peer.id);
+      if (!marker) {
+        marker = L.marker(point, {
+          icon: remotePlayerIcon(peer.name),
+          interactive: false,
+          zIndexOffset: 800,
+        }).addTo(map);
+        remoteRefs.current.set(peer.id, marker);
+      }
+      marker.setLatLng(point);
+      marker.setOpacity(peer.connected ? 1 : 0.38);
+      const element = marker.getElement();
+      if (element) element.style.transition = "transform 1.2s linear, opacity .25s ease";
+    });
+
+    remoteRefs.current.forEach((marker, id) => {
+      if (currentIds.has(id)) return;
+      marker.remove();
+      remoteRefs.current.delete(id);
+    });
+  }, [otherPlayers, ready]);
 
   // heading arrow + arrival aura
   useEffect(() => {
