@@ -93,10 +93,11 @@ export function useHuntRealtime(
         const message = payload as { userId?: unknown; point?: unknown; at?: unknown };
         if (typeof message.userId !== "string" || message.userId === userId || !validLocation(message.point)) return;
         const senderId = message.userId;
+        const senderPoint = message.point;
         setLocations((current) => ({
           ...current,
           [senderId]: {
-            point: message.point,
+            point: senderPoint,
             at: typeof message.at === "number" ? message.at : Date.now(),
           },
         }));
