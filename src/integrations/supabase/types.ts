@@ -47,6 +47,115 @@ export type Database = {
         }
         Relationships: []
       }
+      hunt_players: {
+        Row: {
+          completed_at: string | null
+          display_name: string
+          joined_at: string
+          room_id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          display_name: string
+          joined_at?: string
+          room_id: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          display_name?: string
+          joined_at?: string
+          room_id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hunt_players_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "hunt_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hunt_rooms: {
+        Row: {
+          code: string
+          created_at: string
+          finished_at: string | null
+          host_user_id: string
+          id: string
+          max_players: number
+          mode: string
+          started_at: string | null
+          state: string
+          updated_at: string
+          winner_user_id: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          finished_at?: string | null
+          host_user_id: string
+          id?: string
+          max_players?: number
+          mode: string
+          started_at?: string | null
+          state?: string
+          updated_at?: string
+          winner_user_id?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          finished_at?: string | null
+          host_user_id?: string
+          id?: string
+          max_players?: number
+          mode?: string
+          started_at?: string | null
+          state?: string
+          updated_at?: string
+          winner_user_id?: string | null
+        }
+        Relationships: []
+      }
+      hunt_targets: {
+        Row: {
+          assigned_at: string
+          completed_at: string | null
+          destination: Json
+          room_id: string
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          completed_at?: string | null
+          destination: Json
+          room_id: string
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string
+          completed_at?: string | null
+          destination?: Json
+          room_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hunt_targets_room_id_user_id_fkey"
+            columns: ["room_id", "user_id"]
+            isOneToOne: true
+            referencedRelation: "hunt_players"
+            referencedColumns: ["room_id", "user_id"]
+          },
+        ]
+      }
       photo_memories: {
         Row: {
           created_at: string
@@ -85,7 +194,82 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      complete_hunt_target: { Args: { p_room_id: string }; Returns: undefined }
+      create_hunt_room: {
+        Args: { p_display_name: string; p_mode: string }
+        Returns: {
+          code: string
+          created_at: string
+          finished_at: string | null
+          host_user_id: string
+          id: string
+          max_players: number
+          mode: string
+          started_at: string | null
+          state: string
+          updated_at: string
+          winner_user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "hunt_rooms"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      is_hunt_member:
+        | { Args: { _room_id: string; _user_id: string }; Returns: boolean }
+        | { Args: { p_room_id: string }; Returns: boolean }
+      is_hunt_realtime_member: { Args: { p_topic: string }; Returns: boolean }
+      join_hunt_room: {
+        Args: { p_code: string; p_display_name: string }
+        Returns: {
+          code: string
+          created_at: string
+          finished_at: string | null
+          host_user_id: string
+          id: string
+          max_players: number
+          mode: string
+          started_at: string | null
+          state: string
+          updated_at: string
+          winner_user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "hunt_rooms"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      leave_hunt_room: { Args: { p_room_id: string }; Returns: undefined }
+      set_hunt_target: {
+        Args: { p_destination: Json; p_room_id: string }
+        Returns: undefined
+      }
+      start_hunt_room: {
+        Args: { p_room_id: string }
+        Returns: {
+          code: string
+          created_at: string
+          finished_at: string | null
+          host_user_id: string
+          id: string
+          max_players: number
+          mode: string
+          started_at: string | null
+          state: string
+          updated_at: string
+          winner_user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "hunt_rooms"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       [_ in never]: never
