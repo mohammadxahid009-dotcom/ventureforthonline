@@ -9,6 +9,7 @@ create table public.hunt_rooms (
   mode text not null check (mode in ('team', 'vs')),
   state text not null default 'waiting' check (state in ('waiting', 'active', 'finished', 'cancelled')),
   host_user_id uuid not null references auth.users(id) on delete cascade,
+  winner_user_id uuid references auth.users(id) on delete set null,
   max_players smallint not null default 4 check (max_players between 2 and 4),
   created_at timestamptz not null default now(),
   started_at timestamptz,
@@ -271,11 +272,23 @@ returns void
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $
+declare
+  v_mode text;
+  v_won boolean := true;
 begin
   if not public.is_hunt_member(p_room_id) then raise exception 'You are not in this room'; end if;
-  if not exists (select 1 from public.hunt_rooms where id = p_room_id and state = 'active') then
-    raise exception 'This hunt is not active';
+  select mode into v_mode from public.hunt_rooms where id = p_room_id and state = 'active' for update;
+  if v_mode is null then raise exception 'This hunt is not active'; end if;
+
+  -- In VS, this conditional update is the authoritative first-finisher decision.
+  -- Concurrent phone updates cannot create two winners.
+  if v_mode = 'vs' then
+    update public.hunt_rooms
+    set state = 'finished', finished_at = now(), winner_user_id = auth.uid()
+    where id = p_room_id and state = 'active';
+    get diagnostics v_won = row_count > 0;
+    if not v_won then raise exception 'Another explorer already finished first'; end if;
   end if;
 
   update public.hunt_targets
@@ -286,7 +299,7 @@ begin
   set status = 'completed', completed_at = coalesce(completed_at, now())
   where room_id = p_room_id and user_id = auth.uid();
 end;
-$$;
+$;
 
 grant execute on function public.create_hunt_room(text, text) to authenticated;
 grant execute on function public.join_hunt_room(text, text) to authenticated;
