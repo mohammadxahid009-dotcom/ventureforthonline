@@ -49,90 +49,112 @@ export type Database = {
       }
       hunt_players: {
         Row: {
-          room_id: string
-          user_id: string
-          display_name: string
-          status: "waiting" | "active" | "left" | "completed"
-          joined_at: string
           completed_at: string | null
+          display_name: string
+          joined_at: string
+          room_id: string
+          status: string
+          user_id: string
         }
         Insert: {
-          room_id: string
-          user_id: string
-          display_name: string
-          status?: "waiting" | "active" | "left" | "completed"
-          joined_at?: string
           completed_at?: string | null
+          display_name: string
+          joined_at?: string
+          room_id: string
+          status?: string
+          user_id: string
         }
         Update: {
-          display_name?: string
-          status?: "waiting" | "active" | "left" | "completed"
-          joined_at?: string
           completed_at?: string | null
+          display_name?: string
+          joined_at?: string
+          room_id?: string
+          status?: string
+          user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "hunt_players_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "hunt_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       hunt_rooms: {
         Row: {
-          id: string
           code: string
-          mode: "team" | "vs"
-          state: "waiting" | "active" | "finished" | "cancelled"
-          host_user_id: string
-          winner_user_id: string | null
-          max_players: number
           created_at: string
-          started_at: string | null
           finished_at: string | null
+          host_user_id: string
+          id: string
+          max_players: number
+          mode: string
+          started_at: string | null
+          state: string
           updated_at: string
+          winner_user_id: string | null
         }
         Insert: {
-          id?: string
           code: string
-          mode: "team" | "vs"
-          state?: "waiting" | "active" | "finished" | "cancelled"
-          host_user_id: string
-          winner_user_id?: string | null
-          max_players?: number
           created_at?: string
-          started_at?: string | null
           finished_at?: string | null
+          host_user_id: string
+          id?: string
+          max_players?: number
+          mode: string
+          started_at?: string | null
+          state?: string
           updated_at?: string
+          winner_user_id?: string | null
         }
         Update: {
           code?: string
-          mode?: "team" | "vs"
-          state?: "waiting" | "active" | "finished" | "cancelled"
-          host_user_id?: string
-          winner_user_id?: string | null
-          max_players?: number
-          started_at?: string | null
+          created_at?: string
           finished_at?: string | null
+          host_user_id?: string
+          id?: string
+          max_players?: number
+          mode?: string
+          started_at?: string | null
+          state?: string
           updated_at?: string
+          winner_user_id?: string | null
         }
         Relationships: []
       }
       hunt_targets: {
         Row: {
-          room_id: string
-          user_id: string
-          destination: Json
           assigned_at: string
           completed_at: string | null
-        }
-        Insert: {
+          destination: Json
           room_id: string
           user_id: string
-          destination: Json
+        }
+        Insert: {
           assigned_at?: string
           completed_at?: string | null
+          destination: Json
+          room_id: string
+          user_id: string
         }
         Update: {
-          destination?: Json
           assigned_at?: string
           completed_at?: string | null
+          destination?: Json
+          room_id?: string
+          user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "hunt_targets_room_id_user_id_fkey"
+            columns: ["room_id", "user_id"]
+            isOneToOne: true
+            referencedRelation: "hunt_players"
+            referencedColumns: ["room_id", "user_id"]
+          },
+        ]
       }
       photo_memories: {
         Row: {
@@ -172,29 +194,81 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      complete_hunt_target: {
-        Args: { p_room_id: string }
-        Returns: undefined
-      }
+      complete_hunt_target: { Args: { p_room_id: string }; Returns: undefined }
       create_hunt_room: {
-        Args: { p_mode: string; p_display_name: string }
-        Returns: Database["public"]["Tables"]["hunt_rooms"]["Row"]
+        Args: { p_display_name: string; p_mode: string }
+        Returns: {
+          code: string
+          created_at: string
+          finished_at: string | null
+          host_user_id: string
+          id: string
+          max_players: number
+          mode: string
+          started_at: string | null
+          state: string
+          updated_at: string
+          winner_user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "hunt_rooms"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
+      is_hunt_member:
+        | { Args: { _room_id: string; _user_id: string }; Returns: boolean }
+        | { Args: { p_room_id: string }; Returns: boolean }
+      is_hunt_realtime_member: { Args: { p_topic: string }; Returns: boolean }
       join_hunt_room: {
         Args: { p_code: string; p_display_name: string }
-        Returns: Database["public"]["Tables"]["hunt_rooms"]["Row"]
+        Returns: {
+          code: string
+          created_at: string
+          finished_at: string | null
+          host_user_id: string
+          id: string
+          max_players: number
+          mode: string
+          started_at: string | null
+          state: string
+          updated_at: string
+          winner_user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "hunt_rooms"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
-      leave_hunt_room: {
-        Args: { p_room_id: string }
-        Returns: undefined
-      }
+      leave_hunt_room: { Args: { p_room_id: string }; Returns: undefined }
       set_hunt_target: {
-        Args: { p_room_id: string; p_destination: Json }
+        Args: { p_destination: Json; p_room_id: string }
         Returns: undefined
       }
       start_hunt_room: {
         Args: { p_room_id: string }
-        Returns: Database["public"]["Tables"]["hunt_rooms"]["Row"]
+        Returns: {
+          code: string
+          created_at: string
+          finished_at: string | null
+          host_user_id: string
+          id: string
+          max_players: number
+          mode: string
+          started_at: string | null
+          state: string
+          updated_at: string
+          winner_user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "hunt_rooms"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
     }
     Enums: {
