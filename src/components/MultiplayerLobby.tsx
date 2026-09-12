@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import type { User } from "@supabase/supabase-js";
 import { ArrowLeft, Check, Copy, Crown, Loader2, Play, Radio, Swords, Users } from "lucide-react";
 import { useHuntRealtime } from "@/hooks/use-hunt-realtime";
@@ -271,7 +271,7 @@ function ModeCard({
   active: boolean;
   title: string;
   detail: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   onClick: () => void;
 }) {
   return (
