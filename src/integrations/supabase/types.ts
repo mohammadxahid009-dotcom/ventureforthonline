@@ -47,6 +47,90 @@ export type Database = {
         }
         Relationships: []
       }
+      hunt_players: {
+        Row: {
+          room_id: string
+          user_id: string
+          display_name: string
+          status: "waiting" | "active" | "left" | "completed"
+          joined_at: string
+          completed_at: string | null
+        }
+        Insert: {
+          room_id: string
+          user_id: string
+          display_name: string
+          status?: "waiting" | "active" | "left" | "completed"
+          joined_at?: string
+          completed_at?: string | null
+        }
+        Update: {
+          display_name?: string
+          status?: "waiting" | "active" | "left" | "completed"
+          joined_at?: string
+          completed_at?: string | null
+        }
+        Relationships: []
+      }
+      hunt_rooms: {
+        Row: {
+          id: string
+          code: string
+          mode: "team" | "vs"
+          state: "waiting" | "active" | "finished" | "cancelled"
+          host_user_id: string
+          max_players: number
+          created_at: string
+          started_at: string | null
+          finished_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          code: string
+          mode: "team" | "vs"
+          state?: "waiting" | "active" | "finished" | "cancelled"
+          host_user_id: string
+          max_players?: number
+          created_at?: string
+          started_at?: string | null
+          finished_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          mode?: "team" | "vs"
+          state?: "waiting" | "active" | "finished" | "cancelled"
+          host_user_id?: string
+          max_players?: number
+          started_at?: string | null
+          finished_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      hunt_targets: {
+        Row: {
+          room_id: string
+          user_id: string
+          destination: Json
+          assigned_at: string
+          completed_at: string | null
+        }
+        Insert: {
+          room_id: string
+          user_id: string
+          destination: Json
+          assigned_at?: string
+          completed_at?: string | null
+        }
+        Update: {
+          destination?: Json
+          assigned_at?: string
+          completed_at?: string | null
+        }
+        Relationships: []
+      }
       photo_memories: {
         Row: {
           created_at: string
@@ -85,7 +169,30 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      complete_hunt_target: {
+        Args: { p_room_id: string }
+        Returns: undefined
+      }
+      create_hunt_room: {
+        Args: { p_mode: string; p_display_name: string }
+        Returns: Database["public"]["Tables"]["hunt_rooms"]["Row"]
+      }
+      join_hunt_room: {
+        Args: { p_code: string; p_display_name: string }
+        Returns: Database["public"]["Tables"]["hunt_rooms"]["Row"]
+      }
+      leave_hunt_room: {
+        Args: { p_room_id: string }
+        Returns: undefined
+      }
+      set_hunt_target: {
+        Args: { p_room_id: string; p_destination: Json }
+        Returns: undefined
+      }
+      start_hunt_room: {
+        Args: { p_room_id: string }
+        Returns: Database["public"]["Tables"]["hunt_rooms"]["Row"]
+      }
     }
     Enums: {
       [_ in never]: never
