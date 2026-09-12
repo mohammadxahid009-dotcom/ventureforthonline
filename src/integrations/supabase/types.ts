@@ -79,6 +79,7 @@ export type Database = {
           mode: "team" | "vs"
           state: "waiting" | "active" | "finished" | "cancelled"
           host_user_id: string
+          winner_user_id: string | null
           max_players: number
           created_at: string
           started_at: string | null
@@ -91,6 +92,7 @@ export type Database = {
           mode: "team" | "vs"
           state?: "waiting" | "active" | "finished" | "cancelled"
           host_user_id: string
+          winner_user_id?: string | null
           max_players?: number
           created_at?: string
           started_at?: string | null
@@ -102,6 +104,7 @@ export type Database = {
           mode?: "team" | "vs"
           state?: "waiting" | "active" | "finished" | "cancelled"
           host_user_id?: string
+          winner_user_id?: string | null
           max_players?: number
           started_at?: string | null
           finished_at?: string | null
