@@ -10,8 +10,8 @@ export type HuntPlayer = Tables<"hunt_players">;
 
 export function playerName(user: User) {
   const candidate =
-    user.user_metadata?.display_name ??
-    user.user_metadata?.full_name ??
+    user.user_metadata?.["display_name"] ??
+    user.user_metadata?.["full_name"] ??
     user.email?.split("@")[0] ??
     "Explorer";
   return String(candidate).trim().slice(0, 32) || "Explorer";
