@@ -14,6 +14,7 @@ import {
   Trophy,
   LogOut,
   Camera,
+  Users,
 } from "lucide-react";
 import {
   ARRIVAL_RADIUS,
