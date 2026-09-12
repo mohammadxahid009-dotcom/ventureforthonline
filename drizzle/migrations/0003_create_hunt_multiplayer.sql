@@ -275,7 +275,7 @@ set search_path = public
 as $
 declare
   v_mode text;
-  v_won boolean := true;
+  v_updated integer;
 begin
   if not public.is_hunt_member(p_room_id) then raise exception 'You are not in this room'; end if;
   select mode into v_mode from public.hunt_rooms where id = p_room_id and state = 'active' for update;
@@ -287,8 +287,8 @@ begin
     update public.hunt_rooms
     set state = 'finished', finished_at = now(), winner_user_id = auth.uid()
     where id = p_room_id and state = 'active';
-    get diagnostics v_won = row_count > 0;
-    if not v_won then raise exception 'Another explorer already finished first'; end if;
+    get diagnostics v_updated = row_count;
+    if v_updated = 0 then raise exception 'Another explorer already finished first'; end if;
   end if;
 
   update public.hunt_targets
