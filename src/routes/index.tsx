@@ -516,9 +516,22 @@ function Index() {
       <div className="pointer-events-none absolute inset-x-0 top-0 z-[500] p-3">
         <div className="panel pointer-events-auto flex items-center justify-between gap-3 rounded-xl px-3 py-2">
           <span className="flex items-center gap-2 text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
-            <span className="text-accent">LVL {level}</span>
-            <span className="opacity-50">·</span>
-            {completed} FOUND
+            {inMultiplayer ? (
+              <>
+                <span className="flex items-center gap-1.5 text-accent">
+                  <Users className="h-3.5 w-3.5" />
+                  {huntRoom?.mode === "vs" ? "VS HUNT" : "TEAM HUNT"}
+                </span>
+                <span className="opacity-50">·</span>
+                <span>{huntPlayers.length}/4</span>
+              </>
+            ) : (
+              <>
+                <span className="text-accent">LVL {level}</span>
+                <span className="opacity-50">·</span>
+                {completed} FOUND
+              </>
+            )}
           </span>
           <span className="flex items-center gap-1.5 text-[10px] tracking-[0.18em] text-muted-foreground">
             <span
