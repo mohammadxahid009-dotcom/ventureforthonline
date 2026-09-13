@@ -13,6 +13,17 @@ type Props = {
   rotation?: number;
 };
 
+/** true once Leaflet's panes are positioned and projection maths is safe */
+function mapReady(map: L.Map | null): map is L.Map {
+  if (!map) return false;
+  try {
+    const pane = map.getPane("mapPane") as (HTMLElement & { _leaflet_pos?: unknown }) | undefined;
+    return !!pane && pane["_leaflet_pos"] !== undefined;
+  } catch {
+    return false;
+  }
+}
+
 /** screen pixels per metre at the map's current zoom */
 function pxPerMetre(map: L.Map) {
   const a = map.containerPointToLatLng(L.point(0, 0));
@@ -47,6 +58,7 @@ export default function PhotoMemories({ map, photos, onMove, onResize, onDelete,
   useEffect(() => {
     if (!map) return;
     const onChange = () => bump();
+    map.whenReady(onChange);
     map.on("moveend zoomend resize", onChange);
     return () => {
       map.off("moveend zoomend resize", onChange);
@@ -78,7 +90,7 @@ export default function PhotoMemories({ map, photos, onMove, onResize, onDelete,
 
   // Re-anchor only after the map view settles, not after photo selection/drag renders.
   useEffect(() => {
-    if (!map) return;
+    if (!mapReady(map)) return;
     anchor.current = { tl: map.containerPointToLatLng(L.point(0, 0)), zoom: map.getZoom() };
     if (layerRef.current) layerRef.current.style.transform = "translate3d(0,0,0)";
   }, [map, viewVersion]);
@@ -145,7 +157,7 @@ export default function PhotoMemories({ map, photos, onMove, onResize, onDelete,
       const d = drag.current;
       drag.current = null;
       map?.dragging.enable();
-      if (!d || !map) {
+      if (!d || !mapReady(map)) {
         setLive(null);
         return;
       }
@@ -170,7 +182,7 @@ export default function PhotoMemories({ map, photos, onMove, onResize, onDelete,
     [live, map, onMove, onResize, photos, selectedId],
   );
 
-  if (!map) return null;
+  if (!mapReady(map)) return null;
   const scale = pxPerMetre(map);
   const open = photos.find((p) => p.id === openId) ?? null;
   const size = map.getSize();
