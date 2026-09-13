@@ -90,7 +90,7 @@ export default function PhotoMemories({ map, photos, onMove, onResize, onDelete,
 
   // Re-anchor only after the map view settles, not after photo selection/drag renders.
   useEffect(() => {
-    if (!map) return;
+    if (!mapReady(map)) return;
     anchor.current = { tl: map.containerPointToLatLng(L.point(0, 0)), zoom: map.getZoom() };
     if (layerRef.current) layerRef.current.style.transform = "translate3d(0,0,0)";
   }, [map, viewVersion]);
