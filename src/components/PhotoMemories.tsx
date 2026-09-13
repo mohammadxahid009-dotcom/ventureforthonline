@@ -13,6 +13,17 @@ type Props = {
   rotation?: number;
 };
 
+/** true once Leaflet's panes are positioned and projection maths is safe */
+function mapReady(map: L.Map | null): map is L.Map {
+  if (!map) return false;
+  try {
+    const pane = map.getPane("mapPane") as (HTMLElement & { _leaflet_pos?: unknown }) | undefined;
+    return !!pane && pane["_leaflet_pos"] !== undefined;
+  } catch {
+    return false;
+  }
+}
+
 /** screen pixels per metre at the map's current zoom */
 function pxPerMetre(map: L.Map) {
   const a = map.containerPointToLatLng(L.point(0, 0));
