@@ -157,7 +157,7 @@ export default function PhotoMemories({ map, photos, onMove, onResize, onDelete,
       const d = drag.current;
       drag.current = null;
       map?.dragging.enable();
-      if (!d || !map) {
+      if (!d || !mapReady(map)) {
         setLive(null);
         return;
       }
