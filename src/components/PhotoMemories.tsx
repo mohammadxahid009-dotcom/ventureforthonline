@@ -182,7 +182,7 @@ export default function PhotoMemories({ map, photos, onMove, onResize, onDelete,
     [live, map, onMove, onResize, photos, selectedId],
   );
 
-  if (!map) return null;
+  if (!mapReady(map)) return null;
   const scale = pxPerMetre(map);
   const open = photos.find((p) => p.id === openId) ?? null;
   const size = map.getSize();
