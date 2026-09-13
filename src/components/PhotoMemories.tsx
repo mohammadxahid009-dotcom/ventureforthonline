@@ -58,6 +58,7 @@ export default function PhotoMemories({ map, photos, onMove, onResize, onDelete,
   useEffect(() => {
     if (!map) return;
     const onChange = () => bump();
+    map.whenReady(onChange);
     map.on("moveend zoomend resize", onChange);
     return () => {
       map.off("moveend zoomend resize", onChange);
