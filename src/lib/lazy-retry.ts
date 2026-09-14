@@ -8,7 +8,7 @@ import { lazy, type ComponentType } from "react";
  * with the global error page. Retrying a couple of times — and reloading once
  * when the chunk simply no longer exists — keeps that from happening.
  */
-export function lazyRetry<T extends ComponentType<never>>(
+export function lazyRetry<T extends ComponentType<any>>(
   factory: () => Promise<{ default: T }>,
   key: string,
 ) {

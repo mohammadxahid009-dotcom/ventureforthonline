@@ -56,8 +56,39 @@ export async function listHuntPlayers(roomId: string) {
   return (data ?? []) as HuntPlayer[];
 }
 
-export async function startHunt(roomId: string) {
-  const { data, error } = await supabase.rpc("start_hunt_room", { p_room_id: roomId });
+export const MIN_TIME_LIMIT_MINUTES = 5;
+export const MAX_TIME_LIMIT_MINUTES = 180;
+
+export function formatTimeLimit(minutes: number) {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (!h) return `${m} MIN`;
+  return m ? `${h} H ${m} MIN` : `${h} H`;
+}
+
+/** mm:ss (or h:mm:ss) countdown text for a remaining millisecond amount. */
+export function formatCountdown(msLeft: number) {
+  const total = Math.max(0, Math.floor(msLeft / 1000));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  return h ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+}
+
+export async function startHunt(roomId: string, timeLimitMinutes: number | null = null) {
+  const { data, error } = await supabase.rpc(
+    "start_hunt_room_timed",
+    timeLimitMinutes === null
+      ? { p_room_id: roomId }
+      : { p_room_id: roomId, p_time_limit_minutes: timeLimitMinutes },
+  );
+  throwIfError(error);
+  return data as HuntRoom;
+}
+
+export async function expireHunt(roomId: string) {
+  const { data, error } = await supabase.rpc("expire_hunt_room", { p_room_id: roomId });
   throwIfError(error);
   return data as HuntRoom;
 }

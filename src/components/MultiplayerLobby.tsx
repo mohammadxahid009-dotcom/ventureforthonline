@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import type { User } from "@supabase/supabase-js";
-import { ArrowLeft, Check, Copy, Crown, Loader2, Play, Radio, Swords, Users } from "lucide-react";
+import { ArrowLeft, Check, Copy, Crown, Loader2, Play, Radio, Swords, Timer, Users } from "lucide-react";
 import { useHuntRealtime } from "@/hooks/use-hunt-realtime";
 import {
+  MAX_TIME_LIMIT_MINUTES,
+  MIN_TIME_LIMIT_MINUTES,
   createHuntRoom,
+  formatTimeLimit,
   joinHuntRoom,
   leaveHunt,
   startHunt,
@@ -28,6 +31,8 @@ export default function MultiplayerLobby({ user, onClose, onHuntStarted }: Props
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [timed, setTimed] = useState(false);
+  const [limitMinutes, setLimitMinutes] = useState(30);
 
   const handleRoomChanged = useCallback((next: HuntRoom) => setRoom(next), []);
   const { room: liveRoom, players } = useHuntRealtime(room, user.id, null, handleRoomChanged);
@@ -67,7 +72,7 @@ export default function MultiplayerLobby({ user, onClose, onHuntStarted }: Props
     setBusy(true);
     setError(null);
     try {
-      setRoom(await startHunt(activeRoom.id));
+      setRoom(await startHunt(activeRoom.id, timed ? limitMinutes : null));
     } catch (cause) {
       setError(friendlyError(cause));
     } finally {
@@ -162,6 +167,65 @@ export default function MultiplayerLobby({ user, onClose, onHuntStarted }: Props
               </div>
             ))}
           </div>
+
+          {isHost ? (
+            <div className="panel mt-6 rounded-2xl p-4">
+              <div className="flex items-center justify-between gap-3">
+                <span className="flex items-center gap-2 text-[10px] tracking-[0.22em] text-muted-foreground">
+                  <Timer className="h-3.5 w-3.5 text-accent" /> TIME LIMIT
+                </span>
+                <button
+                  onClick={() => setTimed((value) => !value)}
+                  role="switch"
+                  aria-checked={timed}
+                  aria-label="Toggle time limit"
+                  className={`relative h-6 w-11 shrink-0 rounded-full border transition-colors ${timed ? "border-accent bg-accent/30" : "border-border bg-secondary/50"}`}
+                >
+                  <span
+                    className={`absolute top-0.5 h-4 w-4 rounded-full transition-all ${timed ? "left-6 bg-accent" : "left-0.5 bg-muted-foreground"}`}
+                  />
+                </button>
+              </div>
+
+              {timed ? (
+                <>
+                  <p className="coord-num mt-3 text-2xl text-accent">{formatTimeLimit(limitMinutes)}</p>
+                  <input
+                    type="range"
+                    min={MIN_TIME_LIMIT_MINUTES}
+                    max={MAX_TIME_LIMIT_MINUTES}
+                    step={5}
+                    value={limitMinutes}
+                    onChange={(event) => setLimitMinutes(Number(event.target.value))}
+                    aria-label="Match time limit in minutes"
+                    className="mt-3 w-full accent-[var(--accent)]"
+                  />
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {[5, 15, 30, 60, 90, 180].map((preset) => (
+                      <button
+                        key={preset}
+                        onClick={() => setLimitMinutes(preset)}
+                        className={`rounded-lg border px-2.5 py-1.5 text-[9px] tracking-[0.16em] transition-colors ${limitMinutes === preset ? "border-accent bg-accent/10 text-accent" : "border-border text-muted-foreground hover:border-accent/40"}`}
+                      >
+                        {formatTimeLimit(preset)}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mt-3 text-[10px] leading-relaxed text-muted-foreground">
+                    Reach your destination before the clock hits zero, or the hunt is lost.
+                  </p>
+                </>
+              ) : (
+                <p className="mt-3 text-[10px] leading-relaxed text-muted-foreground">
+                  No clock. Turn this on for a timed hunt (5 minutes to 3 hours).
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="panel mt-6 rounded-2xl p-4 text-[10px] tracking-[0.18em] text-muted-foreground">
+              HOST SETS THE TIME LIMIT
+            </div>
+          )}
 
           {error && <p className="mt-4 text-xs leading-relaxed text-destructive">{error}</p>}
 

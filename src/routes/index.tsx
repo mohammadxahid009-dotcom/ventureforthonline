@@ -14,6 +14,7 @@ import {
   Trophy,
   LogOut,
   Camera,
+  Timer,
   Users,
 } from "lucide-react";
 import {
@@ -38,7 +39,36 @@ import { addPhoto, deletePhoto, listPhotos, updatePhoto, type PhotoMemory } from
 import { supabase } from "@/integrations/supabase/client";
 import MultiplayerLobby from "@/components/MultiplayerLobby";
 import { useHuntRealtime } from "@/hooks/use-hunt-realtime";
-import { assignHuntTarget, completeHuntTarget, leaveHunt, loadMyHuntTarget, type HuntRoom } from "@/lib/multiplayer";
+import {
+  assignHuntTarget,
+  completeHuntTarget,
+  expireHunt,
+  formatCountdown,
+  leaveHunt,
+  loadMyHuntTarget,
+  type HuntRoom,
+} from "@/lib/multiplayer";
+
+/** Milliseconds left on a hunt deadline, ticking once a second. */
+function useHuntCountdown(expiresAt: string | null | undefined) {
+  const [left, setLeft] = useState<number | null>(null);
+  useEffect(() => {
+    if (!expiresAt) {
+      setLeft(null);
+      return;
+    }
+    const deadline = Date.parse(expiresAt);
+    if (Number.isNaN(deadline)) {
+      setLeft(null);
+      return;
+    }
+    const tick = () => setLeft(deadline - Date.now());
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [expiresAt]);
+  return left;
+}
 
 const ExpeditionMap = lazy(() => import("@/components/ExpeditionMap"));
 const DirectionTool = lazy(() => import("@/components/DirectionTool"));
@@ -185,6 +215,16 @@ function Index() {
   const huntRoom = liveHuntRoom ?? multiplayerRoom;
   const inMultiplayer = huntRoom !== null;
   const huntWinner = huntPlayers.find((candidate) => candidate.user_id === huntRoom?.winner_user_id) ?? null;
+  const huntTimeLeft = useHuntCountdown(huntRoom?.state === "active" ? huntRoom.expires_at : null);
+  const huntTimeUp = huntTimeLeft !== null && huntTimeLeft <= 0;
+  const expiredRef = useRef<string | null>(null);
+
+  // ── the host's clock runs out: close the hunt for everyone ────
+  useEffect(() => {
+    if (!huntRoom || !huntTimeUp || expiredRef.current === huntRoom.id) return;
+    expiredRef.current = huntRoom.id;
+    void expireHunt(huntRoom.id).catch(() => {});
+  }, [huntRoom?.id, huntTimeUp]);
 
   // ── signed-out visitors go to the account screen ─────────────
   useEffect(() => {
@@ -524,6 +564,16 @@ function Index() {
                 </span>
                 <span className="opacity-50">·</span>
                 <span>{huntPlayers.length}/4</span>
+                {huntTimeLeft !== null && (
+                  <>
+                    <span className="opacity-50">·</span>
+                    <span
+                      className={`coord-num tracking-normal ${huntTimeLeft <= 60000 ? "text-destructive" : "text-foreground"}`}
+                    >
+                      {formatCountdown(huntTimeLeft)}
+                    </span>
+                  </>
+                )}
               </>
             ) : (
               <>
@@ -672,6 +722,27 @@ function Index() {
               <Camera className="h-4 w-4" />
             )}
           </button>
+        </div>
+      )}
+
+      {/* time pressure ran out */}
+      {huntTimeUp && !celebrating && (
+        <div className="absolute inset-0 z-[570] grid place-items-center bg-background/80 p-6">
+          <div className="panel w-full max-w-xs rounded-2xl p-5 text-center">
+            <Timer className="mx-auto h-7 w-7 text-destructive" />
+            <p className="mt-3 text-base font-bold tracking-[0.24em] text-destructive">TIME&apos;S UP</p>
+            <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+              The clock hit zero before you reached your mark. The hunt is lost — everything you
+              uncovered stays on your map.
+            </p>
+            <div className="ticks mt-4 h-1.5 rounded-full opacity-60" aria-hidden />
+            <button
+              onClick={end}
+              className="mt-4 w-full rounded-xl bg-primary px-4 py-3 text-[10px] font-bold tracking-[0.22em] text-primary-foreground"
+            >
+              BACK TO BASE
+            </button>
+          </div>
         </div>
       )}
 

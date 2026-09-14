@@ -86,6 +86,7 @@ export type Database = {
         Row: {
           code: string
           created_at: string
+          expires_at: string | null
           finished_at: string | null
           host_user_id: string
           id: string
@@ -93,12 +94,14 @@ export type Database = {
           mode: string
           started_at: string | null
           state: string
+          time_limit_minutes: number | null
           updated_at: string
           winner_user_id: string | null
         }
         Insert: {
           code: string
           created_at?: string
+          expires_at?: string | null
           finished_at?: string | null
           host_user_id: string
           id?: string
@@ -106,12 +109,14 @@ export type Database = {
           mode: string
           started_at?: string | null
           state?: string
+          time_limit_minutes?: number | null
           updated_at?: string
           winner_user_id?: string | null
         }
         Update: {
           code?: string
           created_at?: string
+          expires_at?: string | null
           finished_at?: string | null
           host_user_id?: string
           id?: string
@@ -119,6 +124,7 @@ export type Database = {
           mode?: string
           started_at?: string | null
           state?: string
+          time_limit_minutes?: number | null
           updated_at?: string
           winner_user_id?: string | null
         }
@@ -200,6 +206,7 @@ export type Database = {
         Returns: {
           code: string
           created_at: string
+          expires_at: string | null
           finished_at: string | null
           host_user_id: string
           id: string
@@ -207,6 +214,31 @@ export type Database = {
           mode: string
           started_at: string | null
           state: string
+          time_limit_minutes: number | null
+          updated_at: string
+          winner_user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "hunt_rooms"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      expire_hunt_room: {
+        Args: { p_room_id: string }
+        Returns: {
+          code: string
+          created_at: string
+          expires_at: string | null
+          finished_at: string | null
+          host_user_id: string
+          id: string
+          max_players: number
+          mode: string
+          started_at: string | null
+          state: string
+          time_limit_minutes: number | null
           updated_at: string
           winner_user_id: string | null
         }
@@ -226,6 +258,7 @@ export type Database = {
         Returns: {
           code: string
           created_at: string
+          expires_at: string | null
           finished_at: string | null
           host_user_id: string
           id: string
@@ -233,6 +266,7 @@ export type Database = {
           mode: string
           started_at: string | null
           state: string
+          time_limit_minutes: number | null
           updated_at: string
           winner_user_id: string | null
         }
@@ -253,6 +287,7 @@ export type Database = {
         Returns: {
           code: string
           created_at: string
+          expires_at: string | null
           finished_at: string | null
           host_user_id: string
           id: string
@@ -260,6 +295,31 @@ export type Database = {
           mode: string
           started_at: string | null
           state: string
+          time_limit_minutes: number | null
+          updated_at: string
+          winner_user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "hunt_rooms"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      start_hunt_room_timed: {
+        Args: { p_room_id: string; p_time_limit_minutes?: number }
+        Returns: {
+          code: string
+          created_at: string
+          expires_at: string | null
+          finished_at: string | null
+          host_user_id: string
+          id: string
+          max_players: number
+          mode: string
+          started_at: string | null
+          state: string
+          time_limit_minutes: number | null
           updated_at: string
           winner_user_id: string | null
         }
