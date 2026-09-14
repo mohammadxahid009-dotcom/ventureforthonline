@@ -67,7 +67,7 @@ export default function MultiplayerLobby({ user, onClose, onHuntStarted }: Props
     setBusy(true);
     setError(null);
     try {
-      setRoom(await startHunt(activeRoom.id));
+      setRoom(await startHunt(activeRoom.id, timed ? limitMinutes : null));
     } catch (cause) {
       setError(friendlyError(cause));
     } finally {
