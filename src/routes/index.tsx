@@ -38,7 +38,36 @@ import { addPhoto, deletePhoto, listPhotos, updatePhoto, type PhotoMemory } from
 import { supabase } from "@/integrations/supabase/client";
 import MultiplayerLobby from "@/components/MultiplayerLobby";
 import { useHuntRealtime } from "@/hooks/use-hunt-realtime";
-import { assignHuntTarget, completeHuntTarget, leaveHunt, loadMyHuntTarget, type HuntRoom } from "@/lib/multiplayer";
+import {
+  assignHuntTarget,
+  completeHuntTarget,
+  expireHunt,
+  formatCountdown,
+  leaveHunt,
+  loadMyHuntTarget,
+  type HuntRoom,
+} from "@/lib/multiplayer";
+
+/** Milliseconds left on a hunt deadline, ticking once a second. */
+function useHuntCountdown(expiresAt: string | null | undefined) {
+  const [left, setLeft] = useState<number | null>(null);
+  useEffect(() => {
+    if (!expiresAt) {
+      setLeft(null);
+      return;
+    }
+    const deadline = Date.parse(expiresAt);
+    if (Number.isNaN(deadline)) {
+      setLeft(null);
+      return;
+    }
+    const tick = () => setLeft(deadline - Date.now());
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [expiresAt]);
+  return left;
+}
 
 const ExpeditionMap = lazy(() => import("@/components/ExpeditionMap"));
 const DirectionTool = lazy(() => import("@/components/DirectionTool"));
@@ -185,6 +214,16 @@ function Index() {
   const huntRoom = liveHuntRoom ?? multiplayerRoom;
   const inMultiplayer = huntRoom !== null;
   const huntWinner = huntPlayers.find((candidate) => candidate.user_id === huntRoom?.winner_user_id) ?? null;
+  const huntTimeLeft = useHuntCountdown(huntRoom?.state === "active" ? huntRoom.expires_at : null);
+  const huntTimeUp = huntTimeLeft !== null && huntTimeLeft <= 0;
+  const expiredRef = useRef<string | null>(null);
+
+  // ── the host's clock runs out: close the hunt for everyone ────
+  useEffect(() => {
+    if (!huntRoom || !huntTimeUp || expiredRef.current === huntRoom.id) return;
+    expiredRef.current = huntRoom.id;
+    void expireHunt(huntRoom.id).catch(() => {});
+  }, [huntRoom?.id, huntTimeUp]);
 
   // ── signed-out visitors go to the account screen ─────────────
   useEffect(() => {
