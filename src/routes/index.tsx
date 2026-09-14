@@ -14,6 +14,7 @@ import {
   Trophy,
   LogOut,
   Camera,
+  Timer,
   Users,
 } from "lucide-react";
 import {
