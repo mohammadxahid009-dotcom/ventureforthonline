@@ -724,6 +724,27 @@ function Index() {
         </div>
       )}
 
+      {/* time pressure ran out */}
+      {huntTimeUp && !celebrating && (
+        <div className="absolute inset-0 z-[570] grid place-items-center bg-background/80 p-6">
+          <div className="panel w-full max-w-xs rounded-2xl p-5 text-center">
+            <Timer className="mx-auto h-7 w-7 text-destructive" />
+            <p className="mt-3 text-base font-bold tracking-[0.24em] text-destructive">TIME&apos;S UP</p>
+            <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+              The clock hit zero before you reached your mark. The hunt is lost — everything you
+              uncovered stays on your map.
+            </p>
+            <div className="ticks mt-4 h-1.5 rounded-full opacity-60" aria-hidden />
+            <button
+              onClick={end}
+              className="mt-4 w-full rounded-xl bg-primary px-4 py-3 text-[10px] font-bold tracking-[0.22em] text-primary-foreground"
+            >
+              BACK TO BASE
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* completion */}
       {celebrating && (
         <div className="pointer-events-none absolute inset-0 z-[560] grid place-items-center p-6">
