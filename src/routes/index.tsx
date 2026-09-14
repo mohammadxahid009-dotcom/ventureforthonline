@@ -563,6 +563,16 @@ function Index() {
                 </span>
                 <span className="opacity-50">·</span>
                 <span>{huntPlayers.length}/4</span>
+                {huntTimeLeft !== null && (
+                  <>
+                    <span className="opacity-50">·</span>
+                    <span
+                      className={`coord-num tracking-normal ${huntTimeLeft <= 60000 ? "text-destructive" : "text-foreground"}`}
+                    >
+                      {formatCountdown(huntTimeLeft)}
+                    </span>
+                  </>
+                )}
               </>
             ) : (
               <>
