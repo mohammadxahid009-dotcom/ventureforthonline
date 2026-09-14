@@ -79,7 +79,7 @@ export function formatCountdown(msLeft: number) {
 export async function startHunt(roomId: string, timeLimitMinutes: number | null = null) {
   const { data, error } = await supabase.rpc("start_hunt_room_timed", {
     p_room_id: roomId,
-    p_time_limit_minutes: timeLimitMinutes,
+    p_time_limit_minutes: timeLimitMinutes ?? undefined,
   });
   throwIfError(error);
   return data as HuntRoom;
