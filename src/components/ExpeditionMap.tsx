@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import type { LatLng } from "@/lib/expedition";
 import { ARRIVAL_RADIUS, REVEAL_RADIUS, destinationFrom, distanceMeters } from "@/lib/expedition";
+import cloudFogUrl from "@/assets/cloud-fog.jpg";
 
 type Props = {
   player: LatLng;
@@ -22,6 +23,8 @@ type Props = {
 };
 
 const MAX_TRAIL_GAP = 500;
+const SATELLITE_TILES =
+  "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
 
 function playerIcon() {
   return L.divIcon({
@@ -122,9 +125,23 @@ export default function ExpeditionMap({
   const programmatic = useRef(false);
   const drawn = useRef<{ tl: L.LatLng; zoom: number } | null>(null);
   const stampRef = useRef<{ radius: number; canvas: HTMLCanvasElement } | null>(null);
+  const cloudImageRef = useRef<HTMLImageElement | null>(null);
   const [ready, setReady] = useState(false);
+  const [cloudReady, setCloudReady] = useState(false);
   const [tick, setTick] = useState(0);
 
+  useEffect(() => {
+    const image = new Image();
+    image.decoding = "async";
+    image.src = cloudFogUrl;
+    image.onload = () => {
+      cloudImageRef.current = image;
+      setCloudReady(true);
+    };
+    return () => {
+      image.onload = null;
+    };
+  }, []);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -134,9 +151,10 @@ export default function ExpeditionMap({
       zoomControl: false,
       attributionControl: true,
     });
-    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: "&copy; OpenStreetMap",
+    L.tileLayer(SATELLITE_TILES, {
+      maxNativeZoom: 19,
+      maxZoom: 20,
+      attribution: "Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics",
     }).addTo(map);
 
     playerRef.current = L.marker([player.lat, player.lng], {
@@ -292,7 +310,9 @@ export default function ExpeditionMap({
     // canvas pixel space is offset by the padding from container coords
     ctx.setTransform(dpr, 0, 0, dpr, padX * dpr, padY * dpr);
     ctx.clearRect(-padX, -padY, w, h);
-    ctx.fillStyle = "rgba(8, 12, 20, 0.965)";
+    const cloudImage = cloudImageRef.current;
+    const cloudPattern = cloudImage ? ctx.createPattern(cloudImage, "repeat") : null;
+    ctx.fillStyle = cloudPattern ?? "rgba(245, 247, 248, 0.98)";
     ctx.fillRect(-padX, -padY, w, h);
 
     const r = metresToPixels(map, REVEAL_RADIUS);
@@ -354,7 +374,7 @@ export default function ExpeditionMap({
       drawStamp(current.point);
     }
     ctx.globalCompositeOperation = "source-over";
-  }, [trail, tick, ready]);
+  }, [trail, tick, ready, cloudReady]);
 
   // cheap fog follow while panning / zooming
   useEffect(() => {
@@ -436,7 +456,6 @@ export default function ExpeditionMap({
       <div ref={rotateRef} className="absolute inset-0 will-change-transform">
         <div ref={containerRef} className="absolute inset-0 h-full w-full" />
         <canvas ref={fogRef} aria-hidden className="pointer-events-none absolute inset-0 z-[401] will-change-transform" />
-        <div className="map-tint" aria-hidden />
       </div>
     </div>
   );

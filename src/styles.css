@@ -236,9 +236,9 @@ body {
   );
 }
 
-/* Leaflet: warm, dimmed paper map */
+/* Leaflet satellite map surface */
 .leaflet-container {
-  background: oklch(0.15 0.018 250);
+  background: oklch(0.88 0.01 225);
   font-family: var(--font-game);
   outline: none;
 }
@@ -251,13 +251,4 @@ body {
   color: oklch(0.8 0.15 78) !important;
 }
 
-.map-tint {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 400;
-  background:
-    radial-gradient(circle at 50% 46%, transparent 30%, oklch(0.12 0.02 250 / 0.72) 100%),
-    linear-gradient(oklch(0.35 0.06 70 / 0.12), oklch(0.2 0.03 250 / 0.2));
-}
 

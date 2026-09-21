@@ -38,6 +38,7 @@ import { loadProgress, saveProgress, type Progress } from "@/lib/progress";
 import { addPhoto, deletePhoto, listPhotos, updatePhoto, type PhotoMemory } from "@/lib/photos";
 import { supabase } from "@/integrations/supabase/client";
 import MultiplayerLobby from "@/components/MultiplayerLobby";
+import CrewScreen from "@/components/CrewScreen";
 import { useHuntRealtime } from "@/hooks/use-hunt-realtime";
 import {
   assignHuntTarget,
@@ -174,6 +175,7 @@ function Index() {
   const { user, loading: authLoading } = useSession();
   const [phase, setPhase] = useState<Phase>("start");
   const [multiplayerOpen, setMultiplayerOpen] = useState(false);
+  const [crewOpen, setCrewOpen] = useState(false);
   const [multiplayerRoom, setMultiplayerRoom] = useState<HuntRoom | null>(null);
   const [player, setPlayer] = useState<LatLng | null>(null);
   const [accuracy, setAccuracy] = useState<number | null>(null);
@@ -521,8 +523,12 @@ function Index() {
     return <MultiplayerLobby user={user} onClose={() => setMultiplayerOpen(false)} onHuntStarted={handleHuntStarted} />;
   }
 
+  if (crewOpen && user) {
+    return <CrewScreen user={user} onClose={() => setCrewOpen(false)} />;
+  }
+
   if (phase !== "active" || !player || !destination) {
-    return <StartScreen onBegin={begin} onMultiplayer={() => setMultiplayerOpen(true)} loading={phase === "locating"} error={error} level={level} />;
+    return <StartScreen onBegin={begin} onMultiplayer={() => setMultiplayerOpen(true)} onCrew={() => setCrewOpen(true)} loading={phase === "locating"} error={error} level={level} />;
   }
 
   const bearing = bearingDegrees(player, destination);
@@ -849,12 +855,14 @@ function Coord({ axis, value }: { axis: string; value: number }) {
 function StartScreen({
   onBegin,
   onMultiplayer,
+  onCrew,
   loading,
   error,
   level,
 }: {
   onBegin: () => void;
   onMultiplayer: () => void;
+  onCrew: () => void;
   loading: boolean;
   error: string | null;
   level: number;
@@ -913,6 +921,9 @@ function StartScreen({
           </button>
           <button onClick={onMultiplayer} disabled={loading} className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-accent/35 px-4 py-3 text-[10px] font-bold tracking-[0.22em] text-accent transition-colors hover:bg-accent/10 disabled:opacity-60">
             <Users className="h-4 w-4" /> MULTIPLAYER HUNT
+          </button>
+          <button onClick={onCrew} disabled={loading} className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border/70 px-4 py-3 text-[10px] font-bold tracking-[0.22em] text-muted-foreground transition-colors hover:border-accent/35 hover:text-accent disabled:opacity-60">
+            <Users className="h-4 w-4" /> EXPEDITION CREW
           </button>
         </div>
 
