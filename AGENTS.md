@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Use `ExpeditionBackdrop` for photographic backgrounds on non-map screens so imagery, contrast overlays, and behavior stay consistent.

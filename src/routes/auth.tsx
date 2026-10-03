@@ -3,6 +3,8 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Loader2, Compass } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/lib/use-session";
+import ExpeditionBackdrop from "@/components/ExpeditionBackdrop";
+import authBackground from "@/assets/auth-expedition.jpg";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -87,16 +89,7 @@ function AuthPage() {
 
   return (
     <main className="relative grid min-h-[100dvh] place-items-center overflow-hidden bg-background px-5 py-10 text-foreground">
-      <div
-        aria-hidden
-        className="absolute inset-0 opacity-50"
-        style={{
-          backgroundImage:
-            "linear-gradient(oklch(0.8 0.15 78 / .12) 1px, transparent 1px), linear-gradient(90deg, oklch(0.8 0.15 78 / .12) 1px, transparent 1px)",
-          backgroundSize: "56px 56px",
-          maskImage: "radial-gradient(circle at 50% 40%, black, transparent 78%)",
-        }}
-      />
+      <ExpeditionBackdrop src={authBackground} position="center 42%" />
       <div className="relative z-10 w-full max-w-sm">
         <p className="flex items-center gap-2 text-[10px] uppercase tracking-[0.35em] text-accent">
           <Compass className="h-3.5 w-3.5" /> Expedition
