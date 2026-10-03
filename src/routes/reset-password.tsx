@@ -2,6 +2,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import ExpeditionBackdrop from "@/components/ExpeditionBackdrop";
+import authBackground from "@/assets/auth-expedition.jpg";
 
 export const Route = createFileRoute("/reset-password")({
   head: () => ({
@@ -47,8 +49,9 @@ function ResetPassword() {
   };
 
   return (
-    <main className="grid min-h-[100dvh] place-items-center bg-background px-5 py-10 text-foreground">
-      <div className="w-full max-w-sm">
+    <main className="relative grid min-h-[100dvh] place-items-center overflow-hidden bg-background px-5 py-10 text-foreground">
+      <ExpeditionBackdrop src={authBackground} position="center 42%" />
+      <div className="relative z-10 w-full max-w-sm">
         <p className="text-[10px] uppercase tracking-[0.35em] text-accent">Account</p>
         <h1 className="mt-3 text-[1.4rem] font-bold leading-snug">Set a new password</h1>
         <form onSubmit={submit} className="panel mt-6 rounded-2xl p-4">

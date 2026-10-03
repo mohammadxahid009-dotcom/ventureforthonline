@@ -39,6 +39,8 @@ import { addPhoto, deletePhoto, listPhotos, updatePhoto, type PhotoMemory } from
 import { supabase } from "@/integrations/supabase/client";
 import MultiplayerLobby from "@/components/MultiplayerLobby";
 import CrewScreen from "@/components/CrewScreen";
+import ExpeditionBackdrop from "@/components/ExpeditionBackdrop";
+import baseBackground from "@/assets/base-expedition.jpg";
 import { useHuntRealtime } from "@/hooks/use-hunt-realtime";
 import {
   assignHuntTarget,
@@ -879,16 +881,7 @@ function StartScreen({
 
   return (
     <main className="relative grid min-h-[100dvh] place-items-center overflow-hidden bg-background px-5 py-10 text-foreground">
-      <div
-        aria-hidden
-        className="absolute inset-0 opacity-50"
-        style={{
-          backgroundImage:
-            "linear-gradient(oklch(0.8 0.15 78 / .12) 1px, transparent 1px), linear-gradient(90deg, oklch(0.8 0.15 78 / .12) 1px, transparent 1px)",
-          backgroundSize: "56px 56px",
-          maskImage: "radial-gradient(circle at 50% 40%, black, transparent 78%)",
-        }}
-      />
+      <ExpeditionBackdrop src={baseBackground} position="center 40%" />
       <div className="relative z-10 w-full max-w-sm">
         <p className="text-[10px] uppercase tracking-[0.35em] text-accent">Level {level}</p>
         <h1 className="mt-3 text-[1.65rem] font-bold leading-snug">

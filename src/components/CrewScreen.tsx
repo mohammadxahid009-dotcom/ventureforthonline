@@ -23,6 +23,8 @@ import {
   type Crew,
   type Profile,
 } from "@/lib/friends";
+import ExpeditionBackdrop from "@/components/ExpeditionBackdrop";
+import crewBackground from "@/assets/crew-expedition.jpg";
 
 type Tab = "crew" | "add" | "requests";
 
@@ -145,7 +147,7 @@ export default function CrewScreen({ user, onClose }: { user: User; onClose: () 
 
   return (
     <main className="relative min-h-[100dvh] overflow-hidden bg-background px-5 py-6 text-foreground">
-      <GridBackdrop />
+      <ExpeditionBackdrop src={crewBackground} position="center 34%" />
       <section className="relative z-10 mx-auto w-full max-w-md pb-10">
         <div className="flex items-start justify-between gap-3">
           <button
@@ -443,17 +445,3 @@ function EmptyState({ icon, title, detail }: { icon: React.ReactNode; title: str
   );
 }
 
-function GridBackdrop() {
-  return (
-    <div
-      aria-hidden
-      className="absolute inset-0 opacity-50"
-      style={{
-        backgroundImage:
-          "linear-gradient(oklch(0.8 0.15 78 / .12) 1px, transparent 1px), linear-gradient(90deg, oklch(0.8 0.15 78 / .12) 1px, transparent 1px)",
-        backgroundSize: "56px 56px",
-        maskImage: "radial-gradient(circle at 50% 36%, black, transparent 78%)",
-      }}
-    />
-  );
-}
