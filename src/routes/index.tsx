@@ -197,6 +197,7 @@ function Index() {
   const [photos, setPhotos] = useState<PhotoMemory[]>([]);
   const [uploading, setUploading] = useState(false);
   const [cameraOpen, setCameraOpen] = useState(false);
+  const [fallingPhoto, setFallingPhoto] = useState<{ url: string; active: boolean } | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [cone, setCone] = useState<Cone>(DEFAULT_CONE);
   const [scouting, setScouting] = useState(false);
@@ -793,11 +794,36 @@ function Index() {
         </div>
       )}
 
+      {/* Falling photo animation overlay when photo is captured */}
+      {fallingPhoto && (
+        <div className="pointer-events-none fixed inset-0 z-[650] flex items-center justify-center">
+          <img
+            src={fallingPhoto.url}
+            alt="Captured memory preview"
+            className={`h-48 w-48 rounded-2xl object-cover shadow-2xl border-2 border-white transition-all duration-700 ease-in-out ${
+              fallingPhoto.active
+                ? "scale-100 translate-y-0 opacity-100 rotate-0"
+                : "scale-50 translate-y-24 opacity-0 -rotate-12"
+            }`}
+          />
+        </div>
+      )}
+
       {/* in-app bottom sheet camera */}
       {cameraOpen && (
         <Suspense fallback={null}>
           <InAppCamera
-            onCapture={(file) => void onPickPhoto(file)}
+            onCapture={(file, previewUrl) => {
+              setCameraOpen(false);
+              setFallingPhoto({ url: previewUrl, active: true });
+              setTimeout(() => {
+                setFallingPhoto((prev) => (prev ? { ...prev, active: false } : null));
+              }, 100);
+              setTimeout(() => {
+                setFallingPhoto(null);
+              }, 800);
+              void onPickPhoto(file);
+            }}
             onClose={() => setCameraOpen(false)}
             onFallbackFileInput={() => fileRef.current?.click()}
           />
