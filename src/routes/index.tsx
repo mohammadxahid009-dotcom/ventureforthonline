@@ -76,6 +76,7 @@ function useHuntCountdown(expiresAt: string | null | undefined) {
 const ExpeditionMap = lazy(() => import("@/components/ExpeditionMap"));
 const DirectionTool = lazy(() => import("@/components/DirectionTool"));
 const PhotoMemories = lazy(() => import("@/components/PhotoMemories"));
+const InAppCamera = lazy(() => import("@/components/InAppCamera"));
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -195,6 +196,7 @@ function Index() {
   const [mapRotation, setMapRotation] = useState(0);
   const [photos, setPhotos] = useState<PhotoMemory[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [cone, setCone] = useState<Cone>(DEFAULT_CONE);
   const [scouting, setScouting] = useState(false);
@@ -722,7 +724,7 @@ function Index() {
             className="ctrl"
             aria-label="Pin a photo memory here"
             disabled={uploading}
-            onClick={() => fileRef.current?.click()}
+            onClick={() => setCameraOpen(true)}
           >
             {uploading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -791,8 +793,19 @@ function Index() {
         </div>
       )}
 
+      {/* in-app bottom sheet camera */}
+      {cameraOpen && (
+        <Suspense fallback={null}>
+          <InAppCamera
+            onCapture={(file) => void onPickPhoto(file)}
+            onClose={() => setCameraOpen(false)}
+            onFallbackFileInput={() => fileRef.current?.click()}
+          />
+        </Suspense>
+      )}
+
       {/* coordinate console */}
-      {!toolOpen && (
+      {!toolOpen && !cameraOpen && (
         <div className="absolute inset-x-0 bottom-0 z-[500] p-3">
           <div className="panel rounded-2xl p-4">
             <div className="flex items-baseline justify-between">
