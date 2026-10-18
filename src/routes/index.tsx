@@ -889,7 +889,6 @@ function StartScreen({
     await queryClient.cancelQueries();
     queryClient.clear();
     await supabase.auth.signOut();
-    navigate({ to: "/auth", replace: true });
   }
 
   return (
@@ -937,12 +936,21 @@ function StartScreen({
         <p className="mt-5 text-[10px] leading-relaxed tracking-wide text-muted-foreground">
           We need your location to drop you on the map. Nothing leaves your phone.
         </p>
-        <button
-          onClick={handleSignOut}
-          className="mt-6 inline-flex items-center gap-1.5 text-[10px] tracking-[0.25em] text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <LogOut className="h-3 w-3" /> SIGN OUT
-        </button>
+        {signedIn ? (
+          <button
+            onClick={handleSignOut}
+            className="mt-6 inline-flex items-center gap-1.5 text-[10px] tracking-[0.25em] text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <LogOut className="h-3 w-3" /> SIGN OUT
+          </button>
+        ) : (
+          <button
+            onClick={() => navigate({ to: "/auth" })}
+            className="mt-6 inline-flex items-center gap-1.5 text-[10px] tracking-[0.25em] text-muted-foreground transition-colors hover:text-foreground"
+          >
+            SIGN IN (OPTIONAL — FOR MULTIPLAYER &amp; PHOTOS)
+          </button>
+        )}
       </div>
     </main>
   );
