@@ -26,7 +26,26 @@ function isLatLng(v: unknown): v is LatLng {
   );
 }
 
+/** Local-only player used when nobody is signed in; progress lives on this device. */
+export const GUEST_ID = "guest";
+const GUEST_KEY = "expedition-guest-progress";
+
 export async function loadProgress(userId: string): Promise<Progress> {
+  if (userId === GUEST_ID) {
+    try {
+      const raw = JSON.parse(localStorage.getItem(GUEST_KEY) ?? "null");
+      if (!raw) return EMPTY_PROGRESS;
+      return {
+        level: Number(raw.level) || 1,
+        completed: Number(raw.completed) || 0,
+        trail: Array.isArray(raw.trail) ? raw.trail.filter(isLatLng) : [],
+        destination: isLatLng(raw.destination) ? raw.destination : null,
+        expeditionActive: !!raw.expeditionActive,
+      };
+    } catch {
+      return EMPTY_PROGRESS;
+    }
+  }
   const { data, error } = await supabase
     .from("game_progress")
     .select("level, completed, trail, destination, expedition_active")
@@ -57,6 +76,14 @@ function compactTrail(trail: LatLng[]): LatLng[] {
 }
 
 export async function saveProgress(userId: string, p: Progress) {
+  if (userId === GUEST_ID) {
+    try {
+      localStorage.setItem(GUEST_KEY, JSON.stringify({ ...p, trail: compactTrail(p.trail) }));
+    } catch {
+      /* storage full or blocked */
+    }
+    return;
+  }
   await supabase.from("game_progress").upsert(
     {
       user_id: userId,
