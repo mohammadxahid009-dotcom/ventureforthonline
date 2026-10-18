@@ -34,7 +34,7 @@ import {
 } from "@/lib/expedition";
 import { useHeading } from "@/lib/use-heading";
 import { useSession } from "@/lib/use-session";
-import { loadProgress, saveProgress, type Progress } from "@/lib/progress";
+import { GUEST_ID, loadProgress, saveProgress, type Progress } from "@/lib/progress";
 import { addPhoto, deletePhoto, listPhotos, updatePhoto, type PhotoMemory } from "@/lib/photos";
 import { supabase } from "@/integrations/supabase/client";
 import MultiplayerLobby from "@/components/MultiplayerLobby";
@@ -216,7 +216,8 @@ function Index() {
   });
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const userIdRef = useRef<string | null>(null);
-  userIdRef.current = user?.id ?? null;
+  const playerId = user?.id ?? (authLoading ? null : GUEST_ID);
+  userIdRef.current = playerId;
   const { room: liveHuntRoom, players: huntPlayers, remotePlayers } = useHuntRealtime(multiplayerRoom, user?.id, player);
   const huntRoom = liveHuntRoom ?? multiplayerRoom;
   const inMultiplayer = huntRoom !== null;
@@ -232,17 +233,13 @@ function Index() {
     void expireHunt(huntRoom.id).catch(() => {});
   }, [huntRoom?.id, huntTimeUp]);
 
-  // ── signed-out visitors go to the account screen ─────────────
-  useEffect(() => {
-    if (!authLoading && !user) navigate({ to: "/auth", replace: true });
-  }, [authLoading, user, navigate]);
-
-  // ── restore this player's saved progress ─────────────────────
+  // ── restore this player's saved progress (account or this device) ──
   useEffect(() => {
     let cancelled = false;
-    if (!user) return;
+    if (!playerId) return;
+    const id = playerId;
     setRestoring(true);
-    loadProgress(user.id).then((p) => {
+    loadProgress(id).then((p) => {
       if (cancelled) return;
       const cleaned = cleanTrail(p.trail);
       progressRef.current = { ...p, trail: cleaned };
@@ -254,13 +251,13 @@ function Index() {
       if (cleaned.length !== p.trail.length) {
         const repaired = { ...p, trail: cleaned };
         progressRef.current = repaired;
-        void saveProgress(user.id, repaired);
+        void saveProgress(id, repaired);
       }
     });
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, [playerId]);
 
   // ── photo memories ───────────────────────────────────────────
   useEffect(() => {
@@ -278,7 +275,7 @@ function Index() {
     async (file: File) => {
       const map = mapRef.current;
       const id = userIdRef.current;
-      if (!file || !map || !id) return;
+      if (!file || !map || !id || id === GUEST_ID) return;
       setUploading(true);
       try {
         const c = map.getCenter();
@@ -325,11 +322,11 @@ function Index() {
 
   // keep newly revealed ground saved without a write per GPS fix
   useEffect(() => {
-    if (restoring || !user || trail.length === 0) return;
+    if (restoring || !playerId || trail.length === 0) return;
     // never let a shorter in-memory trail overwrite saved exploration
     if (trail.length < progressRef.current.trail.length) return;
     persist({ trail });
-  }, [trail, restoring, user, persist]);
+  }, [trail, restoring, playerId, persist]);
 
   // last-chance save when the tab is hidden or closed
   useEffect(() => {
@@ -532,7 +529,8 @@ function Index() {
   }
 
   if (phase !== "active" || !player || !destination) {
-    return <StartScreen onBegin={begin} onMultiplayer={() => setMultiplayerOpen(true)} onCrew={() => setCrewOpen(true)} loading={phase === "locating"} error={error} level={level} />;
+    const needAccount = (open: () => void) => () => (user ? open() : navigate({ to: "/auth" }));
+    return <StartScreen onBegin={begin} onMultiplayer={needAccount(() => setMultiplayerOpen(true))} onCrew={needAccount(() => setCrewOpen(true))} loading={phase === "locating"} error={error} level={level} signedIn={!!user} />;
   }
 
   const bearing = bearingDegrees(player, destination);
@@ -874,6 +872,7 @@ function StartScreen({
   loading,
   error,
   level,
+  signedIn,
 }: {
   onBegin: () => void;
   onMultiplayer: () => void;
@@ -881,6 +880,7 @@ function StartScreen({
   loading: boolean;
   error: string | null;
   level: number;
+  signedIn: boolean;
 }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
