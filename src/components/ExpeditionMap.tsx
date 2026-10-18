@@ -312,6 +312,12 @@ export default function ExpeditionMap({
     ctx.clearRect(-padX, -padY, w, h);
     const cloudImage = cloudImageRef.current;
     const cloudPattern = cloudImage ? ctx.createPattern(cloudImage, "repeat") : null;
+    // Fit one full copy of the cloud artwork exactly to the phone screen.
+    if (cloudPattern && cloudImage) {
+      cloudPattern.setTransform(
+        new DOMMatrix().scale(size.x / cloudImage.naturalWidth, size.y / cloudImage.naturalHeight),
+      );
+    }
     ctx.fillStyle = cloudPattern ?? "rgba(245, 247, 248, 0.98)";
     ctx.fillRect(-padX, -padY, w, h);
 
