@@ -91,6 +91,13 @@ function AuthPage() {
     <main className="relative grid min-h-[100dvh] place-items-center overflow-hidden bg-background px-5 py-10 text-foreground">
       <ExpeditionBackdrop src={authBackground} position="center 42%" />
       <div className="relative z-10 w-full max-w-sm">
+        <button
+          type="button"
+          onClick={() => navigate({ to: "/", replace: true })}
+          className="mb-6 inline-flex w-full items-center justify-center rounded-xl bg-primary px-4 py-3.5 text-xs font-bold tracking-[0.22em] text-primary-foreground hover:brightness-110"
+        >
+          PLAY NOW — NO ACCOUNT
+        </button>
         <p className="flex items-center gap-2 text-[10px] uppercase tracking-[0.35em] text-accent">
           <Compass className="h-3.5 w-3.5" /> Expedition
         </p>
