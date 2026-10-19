@@ -310,15 +310,8 @@ export default function ExpeditionMap({
     // canvas pixel space is offset by the padding from container coords
     ctx.setTransform(dpr, 0, 0, dpr, padX * dpr, padY * dpr);
     ctx.clearRect(-padX, -padY, w, h);
-    const cloudImage = cloudImageRef.current;
-    const cloudPattern = cloudImage ? ctx.createPattern(cloudImage, "repeat") : null;
-    // Fit one full copy of the cloud artwork exactly to the phone screen.
-    if (cloudPattern && cloudImage) {
-      cloudPattern.setTransform(
-        new DOMMatrix().scale(size.x / cloudImage.naturalWidth, size.y / cloudImage.naturalHeight),
-      );
-    }
-    ctx.fillStyle = cloudPattern ?? "rgba(245, 247, 248, 0.98)";
+    // Solid maroon fog of war at 90% opacity.
+    ctx.fillStyle = "rgba(128, 0, 0, 0.9)";
     ctx.fillRect(-padX, -padY, w, h);
 
     const r = metresToPixels(map, REVEAL_RADIUS);
