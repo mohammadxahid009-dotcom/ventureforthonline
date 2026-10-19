@@ -43,7 +43,7 @@ export function pickKind(survivedS: number, rand: () => number): ZombieKind {
     r -= ZOMBIE_TYPES[k].weight;
     if (r <= 0) return k;
   }
-  return pool[0];
+  return pool[0] ?? "walker";
 }
 
 /** more zombies the longer you last */

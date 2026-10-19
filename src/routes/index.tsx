@@ -879,6 +879,7 @@ function Coord({ axis, value }: { axis: string; value: number }) {
 
 function StartScreen({
   onBegin,
+  onZombies,
   onMultiplayer,
   onCrew,
   loading,
@@ -887,6 +888,7 @@ function StartScreen({
   signedIn,
 }: {
   onBegin: () => void;
+  onZombies: () => void;
   onMultiplayer: () => void;
   onCrew: () => void;
   loading: boolean;
@@ -938,6 +940,9 @@ function StartScreen({
           </button>
           <button onClick={onMultiplayer} disabled={loading} className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-accent/35 px-4 py-3 text-[10px] font-bold tracking-[0.22em] text-accent transition-colors hover:bg-accent/10 disabled:opacity-60">
             <Users className="h-4 w-4" /> MULTIPLAYER HUNT
+          </button>
+          <button onClick={onZombies} disabled={loading} className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-destructive/50 px-4 py-3 text-[10px] font-bold tracking-[0.22em] text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-60">
+            <Biohazard className="h-4 w-4" /> ZOMBIE OUTBREAK
           </button>
           <button onClick={onCrew} disabled={loading} className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border/70 px-4 py-3 text-[10px] font-bold tracking-[0.22em] text-muted-foreground transition-colors hover:border-accent/35 hover:text-accent disabled:opacity-60">
             <Users className="h-4 w-4" /> EXPEDITION CREW
