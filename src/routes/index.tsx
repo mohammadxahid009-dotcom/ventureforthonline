@@ -8,6 +8,7 @@ import {
   Minus,
   Plus,
   Flag,
+  Biohazard,
   Navigation,
   X as XIcon,
   Loader2,
@@ -40,6 +41,7 @@ import { supabase } from "@/integrations/supabase/client";
 import MultiplayerLobby from "@/components/MultiplayerLobby";
 import CrewScreen from "@/components/CrewScreen";
 import ExpeditionBackdrop from "@/components/ExpeditionBackdrop";
+import ZombieMode from "@/components/ZombieMode";
 import baseBackground from "@/assets/base-expedition.jpg";
 import { useHuntRealtime } from "@/hooks/use-hunt-realtime";
 import {
@@ -194,6 +196,7 @@ function Index() {
   const [toolOpen, setToolOpen] = useState(false);
   const [mapObj, setMapObj] = useState<L.Map | null>(null);
   const [mapRotation, setMapRotation] = useState(0);
+  const [zombieMode, setZombieMode] = useState(false);
   const [photos, setPhotos] = useState<PhotoMemory[]>([]);
   const [uploading, setUploading] = useState(false);
   const [cameraOpen, setCameraOpen] = useState(false);
@@ -530,7 +533,7 @@ function Index() {
 
   if (phase !== "active" || !player || !destination) {
     const needAccount = (open: () => void) => () => (user ? open() : navigate({ to: "/auth" }));
-    return <StartScreen onBegin={begin} onMultiplayer={needAccount(() => setMultiplayerOpen(true))} onCrew={needAccount(() => setCrewOpen(true))} loading={phase === "locating"} error={error} level={level} signedIn={!!user} />;
+    return <StartScreen onBegin={begin} onZombies={() => { setZombieMode(true); begin(); }} onMultiplayer={needAccount(() => setMultiplayerOpen(true))} onCrew={needAccount(() => setCrewOpen(true))} loading={phase === "locating"} error={error} level={level} signedIn={!!user} />
   }
 
   const bearing = bearingDegrees(player, destination);
@@ -638,6 +641,10 @@ function Index() {
         </Suspense>
       )}
 
+      {zombieMode && !inMultiplayer && (
+        <ZombieMode map={mapObj} player={player} heading={heading} rotation={mapRotation} onExit={() => setZombieMode(false)} />
+      )}
+
       <Suspense fallback={null}>
         <PhotoMemories
           map={mapObj}
@@ -674,6 +681,11 @@ function Index() {
       {/* controls, thumb side */}
       {!toolOpen && (
         <div className="absolute bottom-56 right-3 z-[500] flex flex-col gap-2">
+          {!inMultiplayer && (
+            <button className={`ctrl ${zombieMode ? "text-destructive" : ""}`} aria-label="Toggle zombie mode" onClick={() => setZombieMode((z) => !z)}>
+              <Biohazard className="h-4 w-4" />
+            </button>
+          )}
           <button className="ctrl" aria-label="Zoom in" onClick={() => mapRef.current?.zoomIn()}>
             <Plus className="h-4 w-4" />
           </button>
